@@ -59,6 +59,10 @@ class Settings:
     STORAGE_DIR: str = os.getenv("STORAGE_DIR", "./storage/captures")
     STORAGE_PUBLIC_PATH: str = os.getenv("STORAGE_PUBLIC_PATH", "/storage/captures")
 
+    # Modbus Relay
+    MODBUS_HOST: str = os.getenv("MODBUS_HOST", "192.168.1.200")
+    MODBUS_PORT: int = int(os.getenv("MODBUS_PORT", "502"))
+
     # App
     APP_HOST: str = os.getenv("APP_HOST", "0.0.0.0")
     APP_PORT: int = int(os.getenv("APP_PORT", "8000"))

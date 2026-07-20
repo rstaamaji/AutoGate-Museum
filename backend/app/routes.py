@@ -14,6 +14,8 @@ from app.Http.Requests.VehicleRequest import (
     VehicleCaptureRequest,
     VehicleListOut,
 )
+from app.Http.Controllers.RelayController import RelayController
+from app.Http.Requests.RelayRequest import RelayControlRequest, RelayControlResponse
 
 # Kalau mau proteksi API key, tambahkan dependencies=[Depends(verify_api_key)]
 # from app.Http.Middleware.auth import verify_api_key
@@ -44,3 +46,12 @@ def create_plate(
     Kalau plat tidak terbaca (unknown), request diabaikan (ignored=true, tidak disimpan).
     """
     return VehicleController.store(db, direction, payload)
+
+
+@router.post("/relay/control", response_model=RelayControlResponse)
+def control_relay(payload: RelayControlRequest):
+    """
+    Endpoint untuk kontrol modbus relay.
+    Menerima JSON dengan channel (int) dan status (bool).
+    """
+    return RelayController.control(payload)
