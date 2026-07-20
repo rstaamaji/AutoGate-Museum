@@ -1,0 +1,48 @@
+version: "2.0"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: autogate-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bismillah
+      POSTGRES_DB: autogatedb
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - autogate      # <-- TAMBAHKAN INI
+
+  backend:
+    build: .
+    container_name: autogate-backend
+    restart: unless-stopped
+
+    depends_on:
+      - postgres
+
+    env_file:
+      - .env
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./storage:/app/storage
+
+    networks:
+      - autogate
+
+networks:
+  autogate:
+    driver: bridge
+
+volumes:
+  postgres_data:
