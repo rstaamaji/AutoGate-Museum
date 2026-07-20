@@ -44,7 +44,14 @@ copy .env.example .env
 
 Edit `.env`:
 - `DATABASE_URL` → sesuaikan user, password, host, nama database PostgreSQL kamu.
-- `CAMERA_HOST`, `CAMERA_USER`, `CAMERA_PASSWORD`, `CAMERA_CHANNEL` → sesuai kamera Hikvision kamu (nilai default diambil dari script yang kamu berikan).
+- Sistem sekarang pakai **2 kamera**: kamera **masuk** (`CAMERA_IN_*`) dan kamera
+  **keluar** (`CAMERA_OUT_*`). Isi `CAMERA_IN_HOST`/`CAMERA_OUT_HOST` (dan user/password/
+  channel kalau beda dari default) sesuai IP kedua kamera Hikvision kamu.
+  `CAMERA_USER`/`CAMERA_PASSWORD`/`CAMERA_USE_HTTPS` di bagian atas dipakai sebagai
+  fallback kalau `CAMERA_IN_*`/`CAMERA_OUT_*` tidak diisi.
+- `UNKNOWN_PLATE_VALUES` → daftar nilai (pisah koma) yang dianggap "plat tidak terbaca".
+  Kalau hasil ANPR kamera cocok salah satu nilai ini (atau kosong), request otomatis
+  diabaikan dan tidak disimpan ke database.
 
 ## 3. Jalankan (Windows)
 
@@ -74,7 +81,8 @@ uvicorn app.main:app --reload
 ### `GET /api/plates`
 Mengambil semua data plat kendaraan yang tersimpan di database.
 
-Query params opsional: `skip`, `limit` (pagination).
+Query params opsional: `skip`, `limit` (pagination), `direction` (`masuk` atau `keluar`
+— untuk filter per arah).
 
 Response:
 ```json
@@ -83,8 +91,10 @@ Response:
   "items": [
     {
       "id": 1,
+      "direction": "masuk",
       "plate_number": "AD1234XY",
-      "image_url": "/storage/captures/ab12cd34.jpg",
+      "plate_image_url": "/storage/captures/masuk_plate_ab12cd34.jpg",
+      "scene_image_url": "/storage/captures/masuk_scene_ab12cd35.jpg",
       "confidence": 92.5,
       "captured_at": "2026-07-17T10:20:30",
       "created_at": "2026-07-17T10:20:31"
@@ -93,35 +103,59 @@ Response:
 }
 ```
 
-Gambar bisa diakses langsung lewat `http://localhost:8000` + `image_url`.
+Gambar bisa diakses langsung lewat `http://localhost:8000` + `plate_image_url` /
+`scene_image_url`.
 
-### `POST /api/plates`
+### `POST /api/plates/{direction}`
+`direction` wajib salah satu dari `masuk` atau `keluar` — menentukan kamera mana
+yang dipanggil (`CAMERA_IN_*` atau `CAMERA_OUT_*`).
+
 Memicu kamera untuk mengambil hasil ANPR **terakhir** yang sudah terekam
-(pakai endpoint `GET /ISAPI/Traffic/MNPR/channels/<channel>`, sesuai script yang
-kamu berikan — metode ini paling stabil untuk "on demand"), lalu:
-1. Simpan gambar ke `storage/captures/`
-2. Simpan `plate_number`, `confidence`, `captured_at` ke tabel `vehicles`
-3. Kembalikan data yang baru tersimpan
+(pakai endpoint `GET /ISAPI/Traffic/MNPR/channels/<channel>`, metode ini paling
+stabil untuk "on demand"). Dari satu response kamera, backend mengambil **2 gambar
+sekaligus**: foto crop plat nomor (`licensePlatePicture`) dan foto scene/kendaraan
+penuh (`detectionPicture`), lalu:
+
+1. Kalau plat nomor hasil ANPR kosong atau termasuk `UNKNOWN_PLATE_VALUES`
+   (mis. "Unknown") → **diabaikan**, tidak ada yang disimpan, response `ignored: true`.
+2. Kalau plat terbaca → simpan kedua gambar ke `storage/captures/`, lalu simpan
+   `direction`, `plate_number`, `confidence`, `captured_at` ke tabel `vehicles`.
 
 Body opsional (boleh dikosongkan):
 ```json
 { "channel": 1 }
 ```
 
-Response `201`:
+Response `201` (plat terbaca):
 ```json
 {
-  "id": 3,
-  "plate_number": "AD1234XY",
-  "image_url": "/storage/captures/ef56gh78.jpg",
-  "confidence": 91.2,
-  "captured_at": "2026-07-17T11:05:00",
-  "created_at": "2026-07-17T11:05:01"
+  "ignored": false,
+  "reason": null,
+  "vehicle": {
+    "id": 3,
+    "direction": "masuk",
+    "plate_number": "AD1234XY",
+    "plate_image_url": "/storage/captures/masuk_plate_ef56gh78.jpg",
+    "scene_image_url": "/storage/captures/masuk_scene_ef56gh79.jpg",
+    "confidence": 91.2,
+    "captured_at": "2026-07-17T11:05:00",
+    "created_at": "2026-07-17T11:05:01"
+  }
+}
+```
+
+Response `201` (plat unknown, diabaikan):
+```json
+{
+  "ignored": true,
+  "reason": "Plat nomor tidak terbaca (unknown) — diabaikan, tidak disimpan.",
+  "vehicle": null
 }
 ```
 
 Kalau kamera tidak bisa dihubungi → `502`.
-Kalau kamera terhubung tapi tidak ada plat pada hasil terakhir → `422`.
+Kalau kamera terhubung tapi tidak mengirim gambar sama sekali → `422`.
+Kalau `direction` bukan `masuk`/`keluar` → `422` (validasi path parameter).
 
 ## 5. Dokumentasi interaktif
 

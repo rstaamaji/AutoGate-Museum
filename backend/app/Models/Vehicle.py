@@ -13,8 +13,10 @@ class Vehicle(Base):
     __tablename__ = "vehicles"
 
     id = Column(Integer, primary_key=True, index=True)
+    direction = Column(String(10), index=True, nullable=False)  # "masuk" atau "keluar"
     plate_number = Column(String(20), index=True, nullable=False)
-    image_path = Column(String(255), nullable=False)          # path fisik file di disk
-    confidence = Column(Float, nullable=True)                  # confidence hasil ANPR (%)
-    captured_at = Column(DateTime, nullable=True)               # waktu kamera mendeteksi plat
+    plate_image_path = Column(String(255), nullable=True)       # foto crop plat nomor
+    scene_image_path = Column(String(255), nullable=True)       # foto scene/kendaraan penuh
+    confidence = Column(Float, nullable=True)                    # confidence hasil ANPR (%)
+    captured_at = Column(DateTime, nullable=True)                 # waktu kamera mendeteksi plat
     created_at = Column(DateTime(timezone=True), server_default=func.now())
