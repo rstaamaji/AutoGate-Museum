@@ -3,7 +3,7 @@ Mirip routes/api.php di Laravel — daftar semua endpoint.
 """
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -37,6 +37,7 @@ def get_plates(
 @router.post("/plates/{direction}", response_model=VehicleCaptureOut, status_code=201)
 def create_plate(
     direction: Direction,
+    background_tasks: BackgroundTasks,
     payload: VehicleCaptureRequest = VehicleCaptureRequest(),
     db: Session = Depends(get_db),
 ):
@@ -45,7 +46,7 @@ def create_plate(
     plat + foto plat + foto scene terbaru, lalu simpan ke database.
     Kalau plat tidak terbaca (unknown), request diabaikan (ignored=true, tidak disimpan).
     """
-    return VehicleController.store(db, direction, payload)
+    return VehicleController.store(db, direction, payload, background_tasks)
 
 
 @router.post("/relay/control", response_model=RelayControlResponse)
