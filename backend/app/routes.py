@@ -16,6 +16,8 @@ from app.Http.Requests.VehicleRequest import (
 )
 from app.Http.Controllers.RelayController import RelayController
 from app.Http.Requests.RelayRequest import RelayControlRequest, RelayControlResponse
+from app.Http.Controllers import StreamController
+from app.Http.Requests.VehicleRequest import Direction
 
 # Kalau mau proteksi API key, tambahkan dependencies=[Depends(verify_api_key)]
 # from app.Http.Middleware.auth import verify_api_key
@@ -55,3 +57,8 @@ def control_relay(payload: RelayControlRequest):
     Menerima JSON dengan channel (int) dan status (bool).
     """
     return RelayController.control(payload)
+
+@router.get("/stream/{direction}")
+def stream_live(direction: Direction):
+    """1 frame JPEG terkini — buat thumbnail atau fallback saat stream mati."""
+    return StreamController.live(direction)
