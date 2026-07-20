@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from fastapi import HTTPException
 from pymodbus.client import ModbusTcpClient
@@ -52,3 +53,21 @@ class RelayController:
         except Exception as e:
             logger.error(f"Modbus error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Terjadi kesalahan internal: {str(e)}")
+
+    @staticmethod
+    async def open_and_close_delayed(channel: int, delay_seconds: int = 15):
+        """
+        Buka relay, tunggu sekian detik, lalu tutup kembali.
+        Digunakan sebagai background task.
+        """
+        try:
+            logger.info(f"Membuka relay channel {channel}...")
+            RelayController.control(RelayControlRequest(channel=channel, status=True))
+            
+            await asyncio.sleep(delay_seconds)
+            
+            logger.info(f"Menutup relay channel {channel} setelah {delay_seconds} detik...")
+            RelayController.control(RelayControlRequest(channel=channel, status=False))
+        except Exception as e:
+            logger.error(f"Gagal menjalankan auto-close relay pada channel {channel}: {str(e)}")
+
