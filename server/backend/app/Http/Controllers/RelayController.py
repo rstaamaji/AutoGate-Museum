@@ -31,7 +31,7 @@ class RelayController:
                 address = 0
                 
             # Tulis coil (ON = True/1, OFF = False/0)
-            result = client.write_coil(address, payload.status, slave=1)
+            result = client.write_coil(address, payload.status)
             
             client.close()
             
