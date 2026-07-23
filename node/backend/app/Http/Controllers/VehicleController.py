@@ -31,7 +31,7 @@ def store(direction: str, payload: VehicleCaptureRequest, background_tasks: Back
 
     # Jika plat terbaca, otomatis buka gate
     if not outcome.ignored and outcome.vehicle:
-        relay_channel = 1 if direction == "masuk" else 2
+        relay_channel = 1 if direction == "masuk" else 4
         background_tasks.add_task(RelayController.open_and_close_delayed, relay_channel, 15)
 
     return VehicleCaptureOut(

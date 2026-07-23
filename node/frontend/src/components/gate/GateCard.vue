@@ -47,8 +47,13 @@ const handleCapture = async () => {
 const handleOpenGate = async () => {
   relayLoading.value = true
   try {
-    const channel = props.direction === 'masuk' ? 1 : 2
+    const channel = props.direction === 'masuk' ? 1 : 4
     await api.controlRelay(channel, true)
+    
+    // Jeda 1 detik lalu matikan lagi
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await api.controlRelay(channel, false)
+    
     emit('refresh')
   } catch (err) {
     console.error('Relay error:', err)
@@ -61,8 +66,13 @@ const handleOpenGate = async () => {
 const handleCloseGate = async () => {
   relayLoading.value = true
   try {
-    const channel = props.direction === 'masuk' ? 1 : 2
+    const channel = props.direction === 'masuk' ? 2 : 5
+    await api.controlRelay(channel, true)
+    
+    // Jeda 1 detik lalu matikan lagi
+    await new Promise(resolve => setTimeout(resolve, 1000))
     await api.controlRelay(channel, false)
+    
     emit('refresh')
   } catch (err) {
     console.error('Relay error:', err)
