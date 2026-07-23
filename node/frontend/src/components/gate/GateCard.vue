@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { Copy, Check, ChevronsLeft, Square, Pause, Camera, Loader2 } from '@lucide/vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Copy, Check, ChevronsLeft, Square, Pause, Camera, Loader2, AlertTriangle, X } from '@lucide/vue'
 import api from '@/services/api'
 
 const props = defineProps({
@@ -20,8 +20,24 @@ const copied = ref(false)
 const capturing = ref(false)
 const relayLoading = ref(false)
 const streamError = ref(false)
+const streamSlowMode = ref(false) // true = retry 5 detik, false = 1 detik
+const captureError = ref('') // pesan error capture
+const relayError = ref('') // pesan error relay
+const cacheBuster = ref(0)
+let streamTimer = null
 
-const streamUrl = computed(() => api.getStreamUrl(props.direction))
+const streamUrl = computed(() => {
+  const base = api.getStreamUrl(props.direction)
+  return `${base}?t=${cacheBuster.value}`
+})
+
+const startStreamTimer = (intervalMs) => {
+  if (streamTimer) clearInterval(streamTimer)
+  streamTimer = setInterval(() => {
+    cacheBuster.value++
+    streamError.value = false
+  }, intervalMs)
+}
 
 const handleCopy = () => {
   if (!props.gate.plate) return
@@ -32,13 +48,14 @@ const handleCopy = () => {
 
 const handleCapture = async () => {
   capturing.value = true
+  captureError.value = ''
   try {
     await api.capturePlate(props.direction)
     emit('capture', props.direction)
     emit('refresh')
   } catch (err) {
     console.error('Capture error:', err)
-    alert(`Gagal capture: ${err.message}`)
+    captureError.value = err.message || 'Gagal capture'
   } finally {
     capturing.value = false
   }
@@ -46,6 +63,7 @@ const handleCapture = async () => {
 
 const handleOpenGate = async () => {
   relayLoading.value = true
+  relayError.value = ''
   try {
     const channel = props.direction === 'masuk' ? 1 : 4
     await api.controlRelay(channel, true)
@@ -57,7 +75,7 @@ const handleOpenGate = async () => {
     emit('refresh')
   } catch (err) {
     console.error('Relay error:', err)
-    alert(`Gagal buka gate: ${err.message}`)
+    relayError.value = err.message || 'Gagal buka gate'
   } finally {
     relayLoading.value = false
   }
@@ -65,6 +83,7 @@ const handleOpenGate = async () => {
 
 const handleCloseGate = async () => {
   relayLoading.value = true
+  relayError.value = ''
   try {
     const channel = props.direction === 'masuk' ? 2 : 5
     await api.controlRelay(channel, true)
@@ -76,7 +95,7 @@ const handleCloseGate = async () => {
     emit('refresh')
   } catch (err) {
     console.error('Relay error:', err)
-    alert(`Gagal tutup gate: ${err.message}`)
+    relayError.value = err.message || 'Gagal tutup gate'
   } finally {
     relayLoading.value = false
   }
@@ -84,7 +103,30 @@ const handleCloseGate = async () => {
 
 const onStreamError = () => {
   streamError.value = true
+  // Slow mode: retry setiap 5 detik agar tidak spam error
+  if (!streamSlowMode.value) {
+    streamSlowMode.value = true
+    startStreamTimer(5000)
+  }
 }
+
+const onStreamLoad = () => {
+  streamError.value = false
+  // Kembali ke mode normal 1 detik
+  if (streamSlowMode.value) {
+    streamSlowMode.value = false
+    startStreamTimer(1000)
+  }
+}
+
+// Refresh stream — mulai dengan interval normal 1 detik
+onMounted(() => {
+  startStreamTimer(1000)
+})
+
+onUnmounted(() => {
+  if (streamTimer) clearInterval(streamTimer)
+})
 </script>
 
 <template>
@@ -104,10 +146,12 @@ const onStreamError = () => {
           alt="CCTV Feed"
           class="w-full h-full object-cover"
           @error="onStreamError"
+          @load="onStreamLoad"
         />
         <div v-else class="w-full h-full bg-gradient-to-br from-zinc-900 via-zinc-950 to-black flex flex-col items-center justify-center p-6 text-center">
           <Camera class="w-12 h-12 text-zinc-700 mb-2" />
           <p class="text-xs font-medium text-zinc-500">Kamera Tidak Terhubung</p>
+          <p class="text-[10px] text-zinc-600 mt-2">Mencoba lagi otomatis...</p>
         </div>
 
         <!-- Timestamp overlay -->
@@ -164,6 +208,30 @@ const onStreamError = () => {
             </span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Error Notifications -->
+    <div v-if="captureError || relayError" class="mb-3 space-y-2">
+      <div
+        v-if="captureError"
+        class="flex items-start gap-2 bg-red-950/80 border border-red-800/60 rounded-lg px-3 py-2"
+      >
+        <AlertTriangle class="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+        <p class="text-xs text-red-300 flex-1">{{ captureError }}</p>
+        <button @click="captureError = ''" class="p-0.5 text-red-400 hover:text-red-300">
+          <X class="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div
+        v-if="relayError"
+        class="flex items-start gap-2 bg-amber-950/80 border border-amber-800/60 rounded-lg px-3 py-2"
+      >
+        <AlertTriangle class="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+        <p class="text-xs text-amber-300 flex-1">{{ relayError }}</p>
+        <button @click="relayError = ''" class="p-0.5 text-amber-400 hover:text-amber-300">
+          <X class="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
 

@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { BarChart3, Car, Radio, Wifi, WifiOff } from '@lucide/vue'
-import GateStatusCard from '@/components/gate/GateStatusCard.vue'
 import NodeStatusList from '@/components/node/NodeStatusList.vue'
+import PlateDetailModal from '@/components/gate/PlateDetailModal.vue'
 import api from '@/services/api'
 
 const summary = ref({
@@ -16,6 +16,7 @@ const summary = ref({
 const nodes = ref([])
 const recentPlates = ref([])
 const loading = ref(false)
+const selectedPlate = ref(null)
 let refreshTimer = null
 
 const fetchData = async () => {
@@ -105,25 +106,6 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <!-- Gate Status Cards + Riwayat -->
       <div class="xl:col-span-2 space-y-6">
-        <!-- Gate Status Cards per Node -->
-        <div v-if="nodes.length">
-          <div v-for="node in nodes" :key="node.id" class="mb-6">
-            <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Radio class="w-4 h-4" />
-              {{ node.name }}
-            </h3>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <GateStatusCard :node="node" direction="masuk" />
-              <GateStatusCard :node="node" direction="keluar" />
-            </div>
-          </div>
-        </div>
-        <div v-else class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-8 text-center">
-          <Radio class="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-          <p class="text-zinc-500">Belum ada pos satpam terdaftar</p>
-          <p class="text-xs text-zinc-600 mt-1">Pos satpam akan muncul otomatis saat pertama kali terhubung</p>
-        </div>
-
         <!-- Riwayat Kendaraan -->
         <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
           <h3 class="text-sm font-bold text-white tracking-tight mb-3 flex items-center gap-2">
@@ -137,6 +119,7 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Waktu</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Node</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Arah</th>
+                  <th class="text-left py-2 px-3 text-zinc-500 font-medium">Gambar</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Plat</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Confidence</th>
                 </tr>
@@ -145,7 +128,8 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                 <tr
                   v-for="plate in recentPlates"
                   :key="plate.id"
-                  class="border-b border-zinc-800/50 hover:bg-zinc-800/30"
+                  class="border-b border-zinc-800/50 hover:bg-zinc-800/30 cursor-pointer"
+                  @click="selectedPlate = plate"
                 >
                   <td class="py-2 px-3 font-mono text-zinc-300">{{ formatTime(plate.created_at) }}</td>
                   <td class="py-2 px-3">
@@ -165,13 +149,22 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                       {{ plate.direction }}
                     </span>
                   </td>
+                  <td class="py-2 px-3">
+                    <img
+                      v-if="plate.plate_image_url"
+                      :src="plate.plate_image_url"
+                      alt="Plat"
+                      class="w-16 h-10 object-contain rounded border border-zinc-700 bg-zinc-950"
+                    />
+                    <span v-else class="text-zinc-600">---</span>
+                  </td>
                   <td class="py-2 px-3 font-mono font-bold text-white">{{ plate.plate_number }}</td>
                   <td class="py-2 px-3 text-zinc-300">
                     {{ plate.confidence ? `${plate.confidence.toFixed(1)}%` : '---' }}
                   </td>
                 </tr>
                 <tr v-if="!recentPlates.length">
-                  <td colspan="5" class="py-4 text-center text-zinc-500">Belum ada data</td>
+                  <td colspan="6" class="py-4 text-center text-zinc-500">Belum ada data</td>
                 </tr>
               </tbody>
             </table>
@@ -184,5 +177,11 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
         <NodeStatusList />
       </div>
     </div>
+    <!-- Modal Detail -->
+    <PlateDetailModal
+      v-if="selectedPlate"
+      :plate="selectedPlate"
+      @close="selectedPlate = null"
+    />
   </div>
 </template>

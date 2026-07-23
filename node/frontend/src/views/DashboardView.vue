@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import GateCard from '@/components/gate/GateCard.vue'
+import PlateDetailModal from '@/components/gate/PlateDetailModal.vue'
 import SyncStatus from '@/components/sync/SyncStatus.vue'
 import api from '@/services/api'
 
@@ -31,6 +32,7 @@ const gates = ref([
 
 const recentPlates = ref([])
 const loading = ref(false)
+const selectedPlate = ref(null)
 let refreshTimer = null
 
 const fetchRecentPlates = async () => {
@@ -102,6 +104,7 @@ onUnmounted(() => {
                 <tr class="border-b border-zinc-800">
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Waktu</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Arah</th>
+                  <th class="text-left py-2 px-3 text-zinc-500 font-medium">Gambar</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Plat</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Confidence</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Sync</th>
@@ -111,7 +114,8 @@ onUnmounted(() => {
                 <tr
                   v-for="plate in recentPlates"
                   :key="plate.id"
-                  class="border-b border-zinc-800/50 hover:bg-zinc-800/30"
+                  class="border-b border-zinc-800/50 hover:bg-zinc-800/30 cursor-pointer"
+                  @click="selectedPlate = plate"
                 >
                   <td class="py-2 px-3 font-mono text-zinc-300">
                     {{ plate.created_at ? new Date(plate.created_at).toLocaleString('id-ID') : '---' }}
@@ -128,6 +132,15 @@ onUnmounted(() => {
                       {{ plate.direction }}
                     </span>
                   </td>
+                  <td class="py-2 px-3">
+                    <img
+                      v-if="plate.plate_image_url"
+                      :src="plate.plate_image_url"
+                      alt="Plat"
+                      class="w-16 h-10 object-contain rounded border border-zinc-700 bg-zinc-950"
+                    />
+                    <span v-else class="text-zinc-600">---</span>
+                  </td>
                   <td class="py-2 px-3 font-mono font-bold text-white">{{ plate.plate_number }}</td>
                   <td class="py-2 px-3 text-zinc-300">
                     {{ plate.confidence ? `${plate.confidence.toFixed(1)}%` : '---' }}
@@ -143,7 +156,7 @@ onUnmounted(() => {
                   </td>
                 </tr>
                 <tr v-if="!recentPlates.length">
-                  <td colspan="5" class="py-4 text-center text-zinc-500">Belum ada data</td>
+                  <td colspan="6" class="py-4 text-center text-zinc-500">Belum ada data</td>
                 </tr>
               </tbody>
             </table>
@@ -156,5 +169,11 @@ onUnmounted(() => {
         <SyncStatus />
       </div>
     </div>
+    <!-- Modal Detail -->
+    <PlateDetailModal
+      v-if="selectedPlate"
+      :plate="selectedPlate"
+      @close="selectedPlate = null"
+    />
   </div>
 </template>
