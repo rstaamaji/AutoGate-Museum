@@ -1,0 +1,17 @@
+.venv
+venv
+
+__pycache__
+*.pyc
+
+.git
+.gitignore
+
+storage/captures/*
+
+.env
+
+.vscode
+.idea
+
+alembic/versions/__pycache__
