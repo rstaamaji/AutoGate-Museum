@@ -30,7 +30,7 @@ class RelayController:
                 )
 
             address = max(payload.channel - 1, 0)
-            result = client.write_coil(address, payload.status, slave=1)
+            result = client.write_coil(address, payload.status)
             client.close()
 
             if result.isError():
