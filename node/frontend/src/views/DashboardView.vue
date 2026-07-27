@@ -78,11 +78,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6 space-y-6">
     <!-- Grid: Gate Cards + Sync Status -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <!-- Gate Cards (2 kolom) -->
-      <div class="xl:col-span-2 space-y-6">
+      <div class="xl:col-span-2 space-y-6 min-w-0">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GateCard
             v-for="gate in gates"
