@@ -1,6 +1,5 @@
 """
-Konfigurasi aplikasi Server — monitoring only.
-Tidak ada setting kamera/relay (itu di pos satpam).
+Konfigurasi aplikasi Server.
 """
 import os
 from pathlib import Path
@@ -16,8 +15,16 @@ class Settings:
         "DATABASE_URL", "postgresql+psycopg2://postgres:password@localhost:5432/autogatedb"
     )
 
-    # Auth
+    # Auth — JWT
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
+
+    # Auth — API key untuk node → server (legacy, sekarang per-node)
     API_KEY: str = os.getenv("API_KEY", "")
+
+    # Default super admin (seed saat startup pertama)
+    DEFAULT_ADMIN_USERNAME: str = os.getenv("DEFAULT_ADMIN_USERNAME", "superadmin")
+    DEFAULT_ADMIN_PASSWORD: str = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123")
 
     # Storage (untuk gambar yang dikirim dari node)
     STORAGE_DIR: str = os.getenv("STORAGE_DIR", "./storage/captures")

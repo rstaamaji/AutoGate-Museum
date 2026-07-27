@@ -1,6 +1,9 @@
 """
 Controller kendaraan — Pos Satpam.
 Trigger kamera, simpan ke SQLite, queue sync.
+
+Gate masuk: capture → simpan → buka pintu
+Gate keluar: capture → validasi server → simpan → buka pintu
 """
 from typing import Optional
 
@@ -26,10 +29,15 @@ def index(skip: int = 0, limit: int = 100, direction: Optional[str] = None) -> V
 
 
 def store(direction: str, payload: VehicleCaptureRequest, background_tasks: BackgroundTasks) -> VehicleCaptureOut:
-    """POST /api/plates/{direction} — trigger kamera, simpan, buka gate."""
+    """
+    POST /api/plates/{direction} — trigger kamera, simpan, buka gate.
+
+    Untuk masuk: langsung capture, simpan, buka gate.
+    Untuk keluar: capture, validasi ke server, baru simpan + buka gate.
+    """
     outcome = VehicleService.capture_and_save(direction=direction, channel=payload.channel)
 
-    # Jika plat terbaca, otomatis buka gate
+    # Jika plat terbaca dan valid, otomatis buka gate
     if not outcome.ignored and outcome.vehicle:
         relay_channel = 1 if direction == "masuk" else 4
         background_tasks.add_task(RelayController.open_and_close_delayed, relay_channel, 15)
@@ -37,5 +45,6 @@ def store(direction: str, payload: VehicleCaptureRequest, background_tasks: Back
     return VehicleCaptureOut(
         ignored=outcome.ignored,
         reason=outcome.reason,
+        validated=outcome.validated,
         vehicle=VehicleOut(**VehicleService.to_out_dict(outcome.vehicle)) if outcome.vehicle else None,
     )

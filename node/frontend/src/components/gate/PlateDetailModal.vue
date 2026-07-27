@@ -20,7 +20,6 @@ const handleClose = () => {
   emit('close')
 }
 
-// Tutup modal dengan tombol Escape
 const onKeydown = (e) => {
   if (e.key === 'Escape') handleClose()
 }
@@ -30,12 +29,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <!-- Backdrop -->
   <div
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
     @click.self="handleClose"
   >
-    <!-- Modal -->
     <div
       class="bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/60 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
     >
@@ -57,7 +54,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       <!-- Body -->
       <div class="p-6 space-y-6">
         <!-- Info Ringkas -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
             <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Plat</p>
             <p class="text-sm font-bold text-white font-mono mt-0.5">{{ plate.plate_number }}</p>
@@ -84,6 +81,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
             <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Waktu</p>
             <p class="text-xs font-mono text-zinc-300 mt-0.5">{{ formatTime(plate.captured_at || plate.created_at) }}</p>
+          </div>
+          <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Event ID</p>
+            <p class="text-[10px] font-mono text-zinc-400 mt-0.5 break-all">{{ plate.event_id || '---' }}</p>
           </div>
         </div>
 

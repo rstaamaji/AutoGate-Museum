@@ -83,6 +83,19 @@ class ApiClient {
   async manualSync() {
     return this.request('/api/sync/manual', { method: 'POST' })
   }
+
+  // ── Settings ──
+
+  async getSettings() {
+    return this.request('/api/settings')
+  }
+
+  async updateSettings(updates) {
+    return this.request('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    })
+  }
 }
 
 export const api = new ApiClient(API_BASE)

@@ -1,6 +1,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Clock, RefreshCw } from '@lucide/vue'
+import { Clock, LogOut, User } from '@lucide/vue'
+
+const props = defineProps({
+  user: Object,
+})
+
+const emit = defineEmits(['logout'])
 
 const currentTime = ref('')
 let timer = null
@@ -26,9 +32,26 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
       <p class="text-xs text-zinc-400">Monitoring status pos satpam & riwayat kendaraan</p>
     </div>
     <div class="flex items-center gap-4">
+      <!-- Clock -->
       <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300">
         <Clock class="w-3.5 h-3.5 text-zinc-400" />
         <span>{{ currentTime }}</span>
+      </div>
+
+      <!-- User Info + Logout -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs">
+          <User class="w-3.5 h-3.5 text-zinc-400" />
+          <span class="text-zinc-300 font-medium">{{ user?.name }}</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-zinc-400 uppercase">{{ user?.role }}</span>
+        </div>
+        <button
+          @click="emit('logout')"
+          class="p-2 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-950/50 border border-transparent hover:border-red-800/50 transition"
+          title="Logout"
+        >
+          <LogOut class="w-4 h-4" />
+        </button>
       </div>
     </div>
   </header>
