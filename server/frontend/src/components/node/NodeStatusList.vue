@@ -10,7 +10,8 @@ let timer = null
 const fetchNodes = async () => {
   loading.value = true
   try {
-    nodes.value = await api.getNodes()
+    const data = await api.getNodes()
+    nodes.value = data.items || data || []
   } catch (err) {
     console.error('Gagal mengambil data node:', err)
   } finally {
@@ -75,50 +76,6 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 
         <!-- ID -->
         <p class="text-[10px] text-zinc-500 font-mono mb-2">{{ node.id }}</p>
-
-        <!-- Device Status Grid -->
-        <div class="grid grid-cols-2 gap-2 mb-2">
-          <div class="flex items-center gap-2 text-xs">
-            <Camera class="w-3.5 h-3.5 text-zinc-500" />
-            <span class="text-zinc-400">Cam Masuk</span>
-            <span
-              :class="[
-                'w-2 h-2 rounded-full ml-auto',
-                node.camera_in_active ? 'bg-emerald-400' : 'bg-zinc-600',
-              ]"
-            ></span>
-          </div>
-          <div class="flex items-center gap-2 text-xs">
-            <Camera class="w-3.5 h-3.5 text-zinc-500" />
-            <span class="text-zinc-400">Cam Keluar</span>
-            <span
-              :class="[
-                'w-2 h-2 rounded-full ml-auto',
-                node.camera_out_active ? 'bg-emerald-400' : 'bg-zinc-600',
-              ]"
-            ></span>
-          </div>
-          <div class="flex items-center gap-2 text-xs">
-            <Zap class="w-3.5 h-3.5 text-zinc-500" />
-            <span class="text-zinc-400">Relay Masuk</span>
-            <span
-              :class="[
-                'w-2 h-2 rounded-full ml-auto',
-                node.relay_in_active ? 'bg-emerald-400' : 'bg-zinc-600',
-              ]"
-            ></span>
-          </div>
-          <div class="flex items-center gap-2 text-xs">
-            <Zap class="w-3.5 h-3.5 text-zinc-500" />
-            <span class="text-zinc-400">Relay Keluar</span>
-            <span
-              :class="[
-                'w-2 h-2 rounded-full ml-auto',
-                node.relay_out_active ? 'bg-emerald-400' : 'bg-zinc-600',
-              ]"
-            ></span>
-          </div>
-        </div>
 
         <!-- Last Seen -->
         <div class="flex items-center gap-1.5 text-[10px] text-zinc-500">

@@ -1,6 +1,18 @@
 """
 Service logika bisnis kendaraan — Pos Satpam.
-Simpan ke SQLite lokal + masukkan ke antrian sinkronisasi.
+
+Gate masuk:
+  1. Capture dari kamera masuk
+  2. Generate UUID event_id
+  3. Simpan ke SQLite lokal + sync queue
+  4. Buka relay masuk
+
+Gate keluar:
+  1. Capture dari kamera keluar
+  2. Tanya server: apakah plat ini sedang di dalam?
+  3. Jika valid → simpan ke SQLite + sync queue, buka relay keluar
+  4. Jika tidak valid → tolak, jangan buka gate
+  5. Jika server offline → fallback cek SQLite lokal
 """
 import json
 import uuid
@@ -8,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+import httpx
 from fastapi import HTTPException, status
 
 from app.config import settings
@@ -20,6 +33,7 @@ class CaptureOutcome(NamedTuple):
     vehicle: Optional[Vehicle]
     ignored: bool
     reason: Optional[str]
+    validated: Optional[bool] = None  # True=valid, False=ditolak, None=tidak perlu validasi
 
 
 def _save_image(image_bytes: bytes, prefix: str) -> str:
@@ -36,10 +50,20 @@ def _to_image_url(image_path: Optional[str]) -> Optional[str]:
     return f"{settings.STORAGE_PUBLIC_PATH.rstrip('/')}/{filename}"
 
 
+def _auth_headers() -> dict:
+    """Header autentikasi untuk komunikasi ke server."""
+    headers = {"Content-Type": "application/json"}
+    if settings.SERVER_API_KEY:
+        headers["X-API-Key"] = settings.SERVER_API_KEY
+    return headers
+
+
 def capture_and_save(direction: str, channel: Optional[int] = None) -> CaptureOutcome:
     """
     Trigger kamera, simpan foto + data ke SQLite lokal,
     lalu masukkan ke antrian sinkronisasi.
+
+    Untuk gate keluar: validasi ke server dulu sebelum buka gate.
     """
     try:
         result = CameraService.capture_plate(direction, channel=channel)
@@ -56,6 +80,21 @@ def capture_and_save(direction: str, channel: Optional[int] = None) -> CaptureOu
             reason="Plat nomor tidak terbaca (unknown) — diabaikan, tidak disimpan.",
         )
 
+    plate_number = result["plate"]
+    event_id = str(uuid.uuid4())
+
+    # Untuk gate keluar: validasi ke server
+    if direction == "keluar":
+        is_valid = _validate_plate_with_server(plate_number)
+        if not is_valid:
+            return CaptureOutcome(
+                vehicle=None,
+                ignored=True,
+                reason=f"Plat '{plate_number}' tidak valid untuk keluar (tidak ditemukan di sistem atau sudah keluar).",
+                validated=False,
+            )
+
+    # Simpan gambar
     plate_image_path = None
     if result["plate_image_bytes"]:
         plate_image_path = _save_image(result["plate_image_bytes"], prefix=f"{direction}_plate")
@@ -74,13 +113,14 @@ def capture_and_save(direction: str, channel: Optional[int] = None) -> CaptureOu
     with get_db() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO vehicles (direction, plate_number, plate_image_path, scene_image_path,
+            INSERT INTO vehicles (event_id, direction, plate_number, plate_image_path, scene_image_path,
                                   confidence, captured_at, synced)
-            VALUES (?, ?, ?, ?, ?, ?, 0)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0)
             """,
             (
+                event_id,
                 direction,
-                result["plate"],
+                plate_number,
                 plate_image_path,
                 scene_image_path,
                 result["confidence"],
@@ -103,12 +143,72 @@ def capture_and_save(direction: str, channel: Optional[int] = None) -> CaptureOu
             (vehicle_id, json.dumps(sync_payload)),
         )
 
-    return CaptureOutcome(vehicle=vehicle, ignored=False, reason=None)
+    return CaptureOutcome(
+        vehicle=vehicle,
+        ignored=False,
+        reason=None,
+        validated=True if direction == "keluar" else None,
+    )
+
+
+def _validate_plate_with_server(plate_number: str) -> bool:
+    """
+    Tanya server: apakah plat ini sedang di dalam?
+    Return True jika server bilang valid.
+    Jika server offline → fallback ke SQLite lokal.
+    """
+    try:
+        with httpx.Client(timeout=10) as client:
+            resp = client.get(
+                f"{settings.SERVER_URL}/api/sync/validate/{plate_number}",
+                headers=_auth_headers(),
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("valid", False)
+            return False
+    except Exception:
+        # Server offline → fallback ke SQLite lokal
+        return _validate_plate_locally(plate_number)
+
+
+def _validate_plate_locally(plate_number: str) -> bool:
+    """
+    Fallback: cek SQLite lokal apakah ada record masuk tanpa keluar
+    (hanya berlaku jika masuk+keluar di node yang sama).
+    """
+    with get_db() as conn:
+        # Cari record masuk terakhir untuk plat ini
+        row = conn.execute(
+            """
+            SELECT id FROM vehicles
+            WHERE plate_number = ? AND direction = 'masuk'
+            ORDER BY created_at DESC LIMIT 1
+            """,
+            (plate_number,),
+        ).fetchone()
+
+        if not row:
+            return False
+
+        # Cek apakah sudah ada record keluar setelah record masuk ini
+        entry_id = row["id"]
+        exit_row = conn.execute(
+            """
+            SELECT id FROM vehicles
+            WHERE plate_number = ? AND direction = 'keluar' AND id > ?
+            LIMIT 1
+            """,
+            (plate_number, entry_id),
+        ).fetchone()
+
+        return exit_row is None  # True jika belum ada keluar
 
 
 def _build_sync_payload(vehicle: Vehicle) -> dict:
     """Bangun payload JSON untuk dikirim ke server."""
     payload = {
+        "event_id": vehicle.event_id,
         "node_id": settings.NODE_ID,
         "direction": vehicle.direction,
         "plate_number": vehicle.plate_number,
@@ -157,6 +257,7 @@ def get_all(skip: int = 0, limit: int = 100, direction: Optional[str] = None) ->
 def to_out_dict(vehicle: Vehicle) -> dict:
     return {
         "id": vehicle.id,
+        "event_id": vehicle.event_id,
         "direction": vehicle.direction,
         "plate_number": vehicle.plate_number,
         "plate_image_url": _to_image_url(vehicle.plate_image_path),

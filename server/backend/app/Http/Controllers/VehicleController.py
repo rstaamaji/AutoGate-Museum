@@ -13,6 +13,56 @@ from app.Http.Requests.VehicleRequest import (
 from app.Models.Vehicle import Vehicle
 
 
+def search_vehicles(db: Session, q: str = "", limit: int = 20) -> list[dict]:
+    """Search kendaraan by plat (untuk dropdown)."""
+    from app.Models.VehicleOwner import VehicleOwner
+
+    query = db.query(Vehicle).outerjoin(VehicleOwner, Vehicle.owner_id == VehicleOwner.id)
+    if q:
+        query = query.filter(Vehicle.plate_number.ilike(f"%{q}%"))
+    query = query.order_by(Vehicle.plate_number)
+    items = query.limit(limit).all()
+    return [
+        {
+            "id": v.id,
+            "plate_number": v.plate_number,
+            "vehicle_type": v.vehicle_type,
+            "cc": v.cc,
+            "owner_id": v.owner_id,
+            "owner_name": v.owner.owner_name if v.owner else None,
+        }
+        for v in items
+    ]
+
+
+def list_vehicles(db: Session, q: str = "", skip: int = 0, limit: int = 50) -> dict:
+    """GET /api/vehicles — daftar kendaraan dengan pagination."""
+    from app.Models.VehicleOwner import VehicleOwner
+
+    query = db.query(Vehicle).outerjoin(VehicleOwner, Vehicle.owner_id == VehicleOwner.id)
+    if q:
+        query = query.filter(Vehicle.plate_number.ilike(f"%{q}%"))
+    query = query.order_by(Vehicle.id.desc())
+    total = query.count()
+    print(f"[VEHICLES] list_vehicles: q='{q}' total={total}")
+    items = query.offset(skip).limit(limit).all()
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": v.id,
+                "plate_number": v.plate_number,
+                "vehicle_type": v.vehicle_type,
+                "cc": v.cc,
+                "owner_id": v.owner_id,
+                "owner_name": v.owner.owner_name if v.owner else None,
+                "created_at": v.created_at.isoformat() if v.created_at else None,
+            }
+            for v in items
+        ],
+    }
+
+
 def _to_image_url(image_path: Optional[str]) -> Optional[str]:
     if not image_path:
         return None

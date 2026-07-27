@@ -3,13 +3,15 @@ Routes API — Pos Satpam.
 """
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, HTTPException, Request
 from fastapi.responses import Response
 
 from app.Http.Controllers import VehicleController, StreamController
 from app.Http.Controllers.RelayController import RelayController
 from app.Http.Controllers.StatusController import get_status
 from app.Http.Controllers.SyncController import get_sync_status, manual_sync
+from app.Http.Controllers.SettingsController import get_settings, update_settings
+from app.Http.Controllers.HikvisionController import handle_radar_event
 from app.Http.Requests.VehicleRequest import (
     Direction,
     VehicleCaptureOut,
@@ -42,6 +44,15 @@ def create_plate(
 ):
     """Trigger kamera, simpan ke SQLite, queue sync, buka gate."""
     return VehicleController.store(direction, payload, background_tasks)
+
+
+@router.post("/hikvision/radar", response_model=VehicleCaptureOut, status_code=201)
+async def hikvision_radar(
+    request: Request,
+    background_tasks: BackgroundTasks,
+):
+    """Terima event ISAPI dari kamera Hikvision (multipart/form-data + XML)."""
+    return await handle_radar_event(request, background_tasks)
 
 
 # ── Relay/Gate ──
@@ -80,3 +91,20 @@ def sync_status():
 async def trigger_manual_sync():
     """Trigger sinkronisasi manual ke server."""
     return await manual_sync()
+
+
+# ── Settings ──
+
+@router.get("/settings")
+def read_settings():
+    """Baca semua konfigurasi node."""
+    return get_settings()
+
+
+@router.put("/settings")
+def write_settings(payload: dict):
+    """Update konfigurasi node (.env file)."""
+    try:
+        return update_settings(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

@@ -2,7 +2,7 @@
 Service sinkronisasi data dari Pos Satpam ke Server.
 Background task yang berjalan terus-menerus:
   - Cek koneksi ke server setiap SYNC_INTERVAL detik
-  - Kirim data pending dari sync_queue
+  - Kirim data pending dari sync_queue ke POST /api/sync/events
   - Kirim heartbeat + status perangkat
 """
 import asyncio
@@ -33,28 +33,17 @@ class SyncService:
         self._running = True
         logger.info(
             f"SyncService started — server: {settings.SERVER_URL}, "
-            f"interval: {settings.SYNC_INTERVAL}s, heartbeat: {settings.HEARTBEAT_INTERVAL}s"
+            f"interval: {settings.SYNC_INTERVAL}s"
         )
 
-        # Register node ke server saat pertama kali
-        await self._register_node()
-
-        last_heartbeat = 0
         while self._running:
             try:
-                now = asyncio.get_event_loop().time()
-
                 # Cek koneksi server
                 self._server_online = await self._check_server()
 
                 if self._server_online:
                     # Kirim data pending
                     await self._sync_pending()
-
-                    # Kirim heartbeat secara berkala
-                    if now - last_heartbeat >= settings.HEARTBEAT_INTERVAL:
-                        await self._send_heartbeat()
-                        last_heartbeat = now
 
             except Exception as e:
                 logger.error(f"SyncService error: {e}")
@@ -68,37 +57,15 @@ class SyncService:
         logger.info("SyncService stopped")
 
     async def _check_server(self) -> bool:
-        """Ping server, return True jika bisa dihubungi."""
+        """Ping server + update last_seen_at. Return True jika bisa dihubungi."""
         try:
             async with httpx.AsyncClient(timeout=5) as client:
-                resp = await client.get(
-                    f"{settings.SERVER_URL}/",
+                resp = await client.post(
+                    f"{settings.SERVER_URL}/api/nodes/ping",
                     headers=self._auth_headers(),
                 )
                 return resp.status_code == 200
         except Exception:
-            return False
-
-    async def _register_node(self) -> bool:
-        """Registrasi node ke server."""
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.post(
-                    f"{settings.SERVER_URL}/api/nodes/register",
-                    json={
-                        "node_id": settings.NODE_ID,
-                        "name": settings.NODE_NAME,
-                    },
-                    headers=self._auth_headers(),
-                )
-                if resp.status_code in (200, 201):
-                    logger.info(f"Node '{settings.NODE_ID}' registered to server")
-                    return True
-                else:
-                    logger.warning(f"Node registration failed: {resp.status_code} {resp.text}")
-                    return False
-        except Exception as e:
-            logger.warning(f"Node registration error: {e}")
             return False
 
     async def _sync_pending(self):
@@ -120,7 +87,7 @@ class SyncService:
 
             try:
                 payload = json.loads(payload_str)
-                success = await self._send_vehicle_data(payload)
+                success = await self._send_event_data(payload)
 
                 if success:
                     with get_db() as conn:
@@ -140,44 +107,19 @@ class SyncService:
                 logger.error(f"Sync error for vehicle_id={vehicle_id}: {e}")
                 self._mark_retry(queue_id, row["retry_count"])
 
-    async def _send_vehicle_data(self, payload: dict) -> bool:
-        """Kirim satu data kendaraan ke server."""
+    async def _send_event_data(self, payload: dict) -> bool:
+        """Kirim satu event kendaraan ke server (POST /api/sync/events)."""
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.post(
-                    f"{settings.SERVER_URL}/api/sync/vehicles",
+                    f"{settings.SERVER_URL}/api/sync/events",
                     json=payload,
                     headers=self._auth_headers(),
                 )
                 return resp.status_code in (200, 201)
         except Exception as e:
-            logger.warning(f"Failed to send vehicle data: {e}")
+            logger.warning(f"Failed to send event data: {e}")
             return False
-
-    async def _send_heartbeat(self):
-        """Kirim heartbeat + status perangkat ke server."""
-        try:
-            # Ambil device status dari SQLite
-            with get_db() as conn:
-                row = conn.execute("SELECT * FROM device_status WHERE id = 1").fetchone()
-
-            status_data = {
-                "node_id": settings.NODE_ID,
-                "camera_in_active": bool(row["camera_in_active"]) if row else False,
-                "camera_out_active": bool(row["camera_out_active"]) if row else False,
-                "relay_in_active": bool(row["relay_in_active"]) if row else False,
-                "relay_out_active": bool(row["relay_out_active"]) if row else False,
-            }
-
-            async with httpx.AsyncClient(timeout=10) as client:
-                await client.put(
-                    f"{settings.SERVER_URL}/api/nodes/{settings.NODE_ID}/status",
-                    json=status_data,
-                    headers=self._auth_headers(),
-                )
-
-        except Exception as e:
-            logger.warning(f"Heartbeat error: {e}")
 
     def _mark_retry(self, queue_id: int, current_retry: int):
         """Tandai item untuk retry."""
@@ -189,7 +131,7 @@ class SyncService:
             )
 
     def _auth_headers(self) -> dict:
-        """Header autentikasi untuk komunikasi ke server."""
+        """Header autentikasi untuk komunikasi ke server (node API key)."""
         headers = {"Content-Type": "application/json"}
         if settings.SERVER_API_KEY:
             headers["X-API-Key"] = settings.SERVER_API_KEY

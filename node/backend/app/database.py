@@ -38,6 +38,7 @@ def init_db():
     cursor.executescript("""
         CREATE TABLE IF NOT EXISTS vehicles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id TEXT NOT NULL UNIQUE,
             direction TEXT NOT NULL,
             plate_number TEXT NOT NULL,
             plate_image_path TEXT,
@@ -48,6 +49,7 @@ def init_db():
             synced INTEGER DEFAULT 0
         );
 
+        CREATE INDEX IF NOT EXISTS idx_vehicles_event_id ON vehicles(event_id);
         CREATE INDEX IF NOT EXISTS idx_vehicles_direction ON vehicles(direction);
         CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate_number);
         CREATE INDEX IF NOT EXISTS idx_vehicles_synced ON vehicles(synced);

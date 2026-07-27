@@ -10,7 +10,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 from app.config import settings  # noqa: E402
 from app.database import Base  # noqa: E402
-from app.Models import Vehicle  # noqa: E402,F401  (registrasi model)
+from app.Models import User, Node, VehicleOwner, VehicleEvent, VehicleHistory  # noqa: E402,F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
