@@ -43,47 +43,49 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <header class="h-16 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-20">
-    <div class="flex items-center gap-6">
-      <div>
-        <h2 class="text-lg font-bold text-white tracking-tight">
-          Pos Satpam — Dashboard
+  <header class="min-h-[4rem] border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md px-4 sm:px-6 py-2.5 sm:py-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sticky top-0 z-20">
+    <!-- Brand / Title & Nav Tabs -->
+    <div class="flex items-center gap-3 sm:gap-6 min-w-0">
+      <div class="min-w-0">
+        <h2 class="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+          Pos Satpam
         </h2>
-        <p class="text-xs text-zinc-400">Kontrol gerbang & monitoring kamera</p>
+        <p class="text-[11px] text-zinc-400 hidden md:block">Kontrol gerbang & monitoring kamera</p>
       </div>
 
       <!-- Nav Tabs -->
-      <nav class="flex items-center gap-1">
+      <nav class="flex items-center gap-1 shrink-0">
         <button
           @click="emit('navigate', 'dashboard')"
           :class="[
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition',
+            'flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition',
             currentView === 'dashboard'
-              ? 'bg-zinc-100 text-zinc-950'
+              ? 'bg-zinc-100 text-zinc-950 font-semibold'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800',
           ]"
         >
           <LayoutDashboard class="w-3.5 h-3.5" />
-          Dashboard
+          <span>Dashboard</span>
         </button>
         <button
           @click="emit('navigate', 'settings')"
           :class="[
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition',
+            'flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition',
             currentView === 'settings'
-              ? 'bg-zinc-100 text-zinc-950'
+              ? 'bg-zinc-100 text-zinc-950 font-semibold'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800',
           ]"
         >
           <Settings class="w-3.5 h-3.5" />
-          Settings
+          <span>Settings</span>
         </button>
       </nav>
     </div>
 
-    <div class="flex items-center gap-4">
+    <!-- Status & Time -->
+    <div class="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto sm:ml-0">
       <!-- Status Indicator -->
-      <div v-if="nodeStatus" class="flex items-center gap-3 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs">
+      <div v-if="nodeStatus" class="flex items-center gap-2 sm:gap-3 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs">
         <div class="flex items-center gap-1.5" :title="nodeStatus.camera_in_active ? 'Kamera Masuk Aktif' : 'Kamera Masuk Nonaktif'">
           <span :class="['w-2 h-2 rounded-full', nodeStatus.camera_in_active ? 'bg-emerald-400' : 'bg-red-400']"></span>
           <span class="text-zinc-400">Cam In</span>
@@ -95,7 +97,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Time -->
-      <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300">
+      <div class="hidden lg:flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300">
         <Clock class="w-3.5 h-3.5 text-zinc-400" />
         <span>{{ currentTime }}</span>
       </div>

@@ -187,10 +187,9 @@ onUnmounted(() => { if (streamTimer) clearInterval(streamTimer) })
       </button>
     </div>
 
-    <!-- Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5">
-      <!-- Camera Preview -->
-      <div class="lg:col-span-7 relative rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800 shadow-inner group aspect-[4/3] flex items-center justify-center">
+    <!-- Camera Preview (Full Width) -->
+    <div class="mb-5">
+      <div class="w-full relative rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800 shadow-inner group aspect-video sm:aspect-[16/9] flex items-center justify-center">
         <img
           v-if="!streamError"
           :src="streamUrl"
@@ -207,50 +206,6 @@ onUnmounted(() => { if (streamTimer) clearInterval(streamTimer) })
 
         <div class="absolute top-3 left-3 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded text-[11px] font-mono text-zinc-200 border border-white/10 z-10">
           {{ gate.timestamp || '--' }}
-        </div>
-        <div class="absolute bottom-3 left-3 bg-black/85 backdrop-blur-md px-3 py-1 rounded text-xs font-bold text-white border border-white/10 z-10">
-          {{ gate.lane }}
-        </div>
-        <div class="absolute bottom-3 right-3 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded text-xs font-semibold text-emerald-400 flex items-center gap-1.5 border border-white/10 z-10">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          ANPR
-        </div>
-      </div>
-
-      <!-- Details -->
-      <div class="lg:col-span-5 flex flex-col justify-start space-y-3">
-        <div>
-          <p class="text-xs font-medium text-zinc-400 mb-1">Plat Terbaca</p>
-          <div class="flex items-center justify-between bg-zinc-950 border border-zinc-700/80 px-3.5 py-2 rounded-lg shadow-inner">
-            <span class="text-lg font-extrabold text-white tracking-widest font-mono">
-              {{ gate.plate || '---' }}
-            </span>
-            <button @click="handleCopy" class="p-1 text-zinc-400 hover:text-white rounded hover:bg-zinc-800 transition" title="Salin">
-              <Check v-if="copied" class="w-4 h-4 text-emerald-400" />
-              <Copy v-else class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div class="space-y-2 text-xs">
-          <div class="flex items-center justify-between py-1 border-b border-zinc-800/80">
-            <span class="text-zinc-400 font-medium">Confidence</span>
-            <span class="font-mono text-zinc-200 font-semibold">
-              {{ gate.confidence ? `${gate.confidence.toFixed(1)}%` : '---' }}
-            </span>
-          </div>
-          <div class="flex items-center justify-between py-1 border-b border-zinc-800/80">
-            <span class="text-zinc-400 font-medium">Arah</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">
-              {{ direction }}
-            </span>
-          </div>
-          <div class="flex items-center justify-between py-1">
-            <span class="text-zinc-400 font-medium">Barrier</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-              {{ gate.barrierStatus || 'TERTUTUP' }}
-            </span>
-          </div>
         </div>
       </div>
     </div>

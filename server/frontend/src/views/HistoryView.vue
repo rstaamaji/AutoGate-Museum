@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { History, Search, Filter, ChevronLeft, ChevronRight } from '@lucide/vue'
+import { History, Search, Filter, ChevronLeft, ChevronRight, Eye } from '@lucide/vue'
+import VehicleHistoryDetailModal from '@/components/gate/VehicleHistoryDetailModal.vue'
 import api from '@/services/api'
 
 const history = ref([])
@@ -8,6 +9,9 @@ const loading = ref(false)
 const total = ref(0)
 const page = ref(0)
 const limit = 20
+
+// Modal
+const selectedHistory = ref(null)
 
 // Filters
 const filterPlate = ref('')
@@ -115,6 +119,7 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Node Masuk</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Node Keluar</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Status</th>
+              <th class="text-center py-3 px-4 text-zinc-500 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -155,9 +160,19 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                   {{ h.is_inside ? 'Di Dalam' : 'Keluar' }}
                 </span>
               </td>
+              <td class="py-3 px-4 text-center">
+                <button
+                  @click="selectedHistory = h"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition border border-zinc-700/60"
+                  title="Lihat Detail"
+                >
+                  <Eye class="w-3.5 h-3.5 text-blue-400" />
+                  <span>Detail</span>
+                </button>
+              </td>
             </tr>
             <tr v-if="!history.length && !loading">
-              <td colspan="7" class="py-6 text-center text-zinc-500">Belum ada data riwayat</td>
+              <td colspan="8" class="py-6 text-center text-zinc-500">Belum ada data riwayat</td>
             </tr>
           </tbody>
         </table>
@@ -187,5 +202,12 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
         </div>
       </div>
     </div>
+
+    <!-- Modal Detail -->
+    <VehicleHistoryDetailModal
+      v-if="selectedHistory"
+      :history="selectedHistory"
+      @close="selectedHistory = null"
+    />
   </div>
 </template>

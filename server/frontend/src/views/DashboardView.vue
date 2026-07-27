@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { BarChart3, Car, Radio, Wifi, WifiOff, History, Users as UsersIcon } from '@lucide/vue'
+import { BarChart3, Car, Radio, Wifi, WifiOff, History, ArrowRight } from '@lucide/vue'
 import NodeStatusList from '@/components/node/NodeStatusList.vue'
-import PlateDetailModal from '@/components/gate/PlateDetailModal.vue'
 import api from '@/services/api'
+
+const emit = defineEmits(['navigate'])
 
 const summary = ref({
   total_events: 0,
@@ -16,7 +17,6 @@ const summary = ref({
 
 const recentHistory = ref([])
 const loading = ref(false)
-const selectedPlate = ref(null)
 let refreshTimer = null
 
 const fetchData = async () => {
@@ -48,16 +48,16 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6 space-y-6">
     <!-- Summary Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
             <BarChart3 class="w-5 h-5 text-blue-400" />
           </div>
-          <div>
-            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Total Event</p>
+          <div class="min-w-0">
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider truncate">Total Event</p>
             <p class="text-2xl font-bold text-white font-mono">{{ summary.total_events }}</p>
           </div>
         </div>
@@ -65,11 +65,11 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
 
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
             <Car class="w-5 h-5 text-emerald-400" />
           </div>
-          <div>
-            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Hari Ini</p>
+          <div class="min-w-0">
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider truncate">Hari Ini</p>
             <p class="text-2xl font-bold text-white font-mono">{{ summary.today_events }}</p>
           </div>
         </div>
@@ -77,11 +77,11 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
 
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
             <Car class="w-5 h-5 text-amber-400" />
           </div>
-          <div>
-            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Di Dalam</p>
+          <div class="min-w-0">
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider truncate">Di Dalam</p>
             <p class="text-2xl font-bold text-white font-mono">{{ summary.vehicles_inside }}</p>
           </div>
         </div>
@@ -89,11 +89,11 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
 
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
             <Wifi class="w-5 h-5 text-emerald-400" />
           </div>
-          <div>
-            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Node Online</p>
+          <div class="min-w-0">
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider truncate">Node Online</p>
             <p class="text-2xl font-bold text-white font-mono">{{ summary.online_nodes }}</p>
           </div>
         </div>
@@ -101,11 +101,11 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
 
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
             <WifiOff class="w-5 h-5 text-red-400" />
           </div>
-          <div>
-            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Node Offline</p>
+          <div class="min-w-0">
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider truncate">Node Offline</p>
             <p class="text-2xl font-bold text-white font-mono">{{ summary.offline_nodes }}</p>
           </div>
         </div>
@@ -115,12 +115,21 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
     <!-- Main Content -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <!-- History -->
-      <div class="xl:col-span-2 space-y-6">
+      <div class="xl:col-span-2 space-y-6 min-w-0">
         <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
-          <h3 class="text-sm font-bold text-white tracking-tight mb-3 flex items-center gap-2">
-            <History class="w-4 h-4 text-zinc-400" />
-            Riwayat Terbaru
-          </h3>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+              <History class="w-4 h-4 text-zinc-400" />
+              Riwayat Terbaru
+            </h3>
+            <button
+              @click="emit('navigate', 'history')"
+              class="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 hover:bg-zinc-800/60 px-2.5 py-1 rounded-lg transition border border-transparent hover:border-zinc-700/60"
+            >
+              <span>Lihat Semua</span>
+              <ArrowRight class="w-3.5 h-3.5" />
+            </button>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead>

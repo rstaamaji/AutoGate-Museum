@@ -74,7 +74,7 @@ onMounted(() => {
     <div class="flex-1 flex flex-col min-w-0">
       <AppHeader :user="user" @logout="handleLogout" />
       <main class="flex-1 overflow-y-auto">
-        <component :is="currentComponent" :user="user" />
+        <component :is="currentComponent" :user="user" @navigate="handleNavigate" />
       </main>
     </div>
   </div>
