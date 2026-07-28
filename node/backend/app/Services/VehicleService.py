@@ -231,24 +231,48 @@ def _build_sync_payload(vehicle: Vehicle) -> dict:
     return payload
 
 
-def get_all(skip: int = 0, limit: int = 100, direction: Optional[str] = None) -> tuple[list[Vehicle], int]:
-    """Ambil semua data kendaraan dari SQLite."""
+def get_all(
+    skip: int = 0,
+    limit: int = 100,
+    direction: Optional[str] = None,
+    search: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> tuple[list[Vehicle], int]:
+    """Ambil data kendaraan dari SQLite dengan filter direction, search plat nomor, & range tanggal."""
     with get_db() as conn:
         query = "SELECT * FROM vehicles"
         count_query = "SELECT COUNT(*) FROM vehicles"
+        where_clauses = []
         params = []
 
         if direction:
-            query += " WHERE direction = ?"
-            count_query += " WHERE direction = ?"
+            where_clauses.append("direction = ?")
             params.append(direction)
+
+        if search and search.strip():
+            where_clauses.append("plate_number LIKE ?")
+            params.append(f"%{search.strip()}%")
+
+        if start_date:
+            where_clauses.append("created_at >= ?")
+            params.append(f"{start_date} 00:00:00" if " " not in start_date and "T" not in start_date else start_date)
+
+        if end_date:
+            where_clauses.append("created_at <= ?")
+            params.append(f"{end_date} 23:59:59" if " " not in end_date and "T" not in end_date else end_date)
+
+        if where_clauses:
+            where_str = " WHERE " + " AND ".join(where_clauses)
+            query += where_str
+            count_query += where_str
 
         total = conn.execute(count_query, params).fetchone()[0]
 
         query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
-        params.extend([limit, skip])
+        query_params = list(params) + [limit, skip]
 
-        rows = conn.execute(query, params).fetchall()
+        rows = conn.execute(query, query_params).fetchall()
         items = [Vehicle.from_row(r) for r in rows]
 
     return items, total

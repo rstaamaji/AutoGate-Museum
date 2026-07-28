@@ -7,6 +7,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Clock,
+  History,
 } from '@lucide/vue'
 import api from '@/services/api'
 
@@ -57,6 +58,7 @@ onUnmounted(() => {
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'history', label: 'Riwayat', icon: History },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 </script>

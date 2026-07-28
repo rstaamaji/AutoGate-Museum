@@ -31,9 +31,19 @@ def get_plates(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     direction: Optional[Direction] = Query(None),
+    search: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
 ):
     """Ambil data kendaraan dari SQLite lokal."""
-    return VehicleController.index(skip=skip, limit=limit, direction=direction)
+    return VehicleController.index(
+        skip=skip,
+        limit=limit,
+        direction=direction,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 @router.post("/plates/{direction}", response_model=VehicleCaptureOut, status_code=201)

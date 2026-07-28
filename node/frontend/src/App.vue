@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import HistoryView from '@/views/HistoryView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 
 const currentView = ref('dashboard')
@@ -9,6 +10,7 @@ const sidebarCollapsed = ref(false)
 
 const views = {
   dashboard: DashboardView,
+  history: HistoryView,
   settings: SettingsView,
 }
 
@@ -34,7 +36,7 @@ const handleToggleSidebar = () => {
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
       <main class="flex-1">
-        <component :is="views[currentView] || DashboardView" />
+        <component :is="views[currentView] || DashboardView" @navigate="handleNavigate" />
       </main>
     </div>
   </div>
