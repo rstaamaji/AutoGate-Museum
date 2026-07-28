@@ -8,6 +8,7 @@ import UsersView from '@/views/UsersView.vue'
 import NodesView from '@/views/NodesView.vue'
 import VehicleOwnersView from '@/views/VehicleOwnersView.vue'
 import VehiclesView from '@/views/VehiclesView.vue'
+import VehicleTypesView from '@/views/VehicleTypesView.vue'
 import HistoryView from '@/views/HistoryView.vue'
 import EventsView from '@/views/EventsView.vue'
 import api from '@/services/api'
@@ -23,6 +24,7 @@ const views = {
   users: UsersView,
   nodes: NodesView,
   'vehicle-owners': VehicleOwnersView,
+  'vehicle-types': VehicleTypesView,
   vehicles: VehiclesView,
   history: HistoryView,
   events: EventsView,
