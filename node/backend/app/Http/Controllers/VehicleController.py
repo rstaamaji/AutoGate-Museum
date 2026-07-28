@@ -19,9 +19,23 @@ from app.Services import VehicleService
 from app.Http.Controllers.RelayController import RelayController
 
 
-def index(skip: int = 0, limit: int = 100, direction: Optional[str] = None) -> VehicleListOut:
+def index(
+    skip: int = 0,
+    limit: int = 100,
+    direction: Optional[str] = None,
+    search: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> VehicleListOut:
     """GET /api/plates — daftar kendaraan lokal."""
-    items, total = VehicleService.get_all(skip=skip, limit=limit, direction=direction)
+    items, total = VehicleService.get_all(
+        skip=skip,
+        limit=limit,
+        direction=direction,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+    )
     return VehicleListOut(
         total=total,
         items=[VehicleOut(**VehicleService.to_out_dict(v)) for v in items],

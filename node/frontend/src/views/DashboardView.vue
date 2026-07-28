@@ -34,6 +34,7 @@ const recentPlates = ref([])
 const loading = ref(false)
 const selectedPlate = ref(null)
 let refreshTimer = null
+const emit = defineEmits(['navigate'])
 
 const fetchRecentPlates = async () => {
   try {
@@ -96,7 +97,15 @@ onUnmounted(() => {
 
         <!-- Riwayat Terbaru -->
         <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 shadow-xl shadow-black/40">
-          <h3 class="text-sm font-bold text-white tracking-tight mb-3">Riwayat Terbaru</h3>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-white tracking-tight">Riwayat Terbaru (10 Terakhir)</h3>
+            <button
+              @click="$emit('navigate', 'history')"
+              class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:underline transition"
+            >
+              Lihat Selengkapnya →
+            </button>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead>

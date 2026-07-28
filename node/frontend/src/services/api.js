@@ -38,9 +38,12 @@ class ApiClient {
 
   async getPlates(params = {}) {
     const query = new URLSearchParams()
-    if (params.skip) query.set('skip', params.skip)
-    if (params.limit) query.set('limit', params.limit)
+    if (params.skip !== undefined) query.set('skip', params.skip)
+    if (params.limit !== undefined) query.set('limit', params.limit)
     if (params.direction) query.set('direction', params.direction)
+    if (params.search) query.set('search', params.search)
+    if (params.start_date) query.set('start_date', params.start_date)
+    if (params.end_date) query.set('end_date', params.end_date)
     const qs = query.toString()
     return this.request(`/api/plates${qs ? `?${qs}` : ''}`)
   }
