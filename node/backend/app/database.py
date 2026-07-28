@@ -35,9 +35,18 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # Migrasi sederhana jika tabel vehicles sudah ada tapi belum punya kolom event_id
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='vehicles';")
+    if cursor.fetchone():
+        cursor.execute("PRAGMA table_info(vehicles);")
+        columns = [col[1] for col in cursor.fetchall()]
+        if "event_id" not in columns:
+            cursor.execute("ALTER TABLE vehicles ADD COLUMN event_id TEXT;")
+
     cursor.executescript("""
         CREATE TABLE IF NOT EXISTS vehicles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id TEXT,
             direction TEXT NOT NULL,
             plate_number TEXT NOT NULL,
             plate_image_path TEXT,
@@ -48,6 +57,7 @@ def init_db():
             synced INTEGER DEFAULT 0
         );
 
+        CREATE INDEX IF NOT EXISTS idx_vehicles_event_id ON vehicles(event_id);
         CREATE INDEX IF NOT EXISTS idx_vehicles_direction ON vehicles(direction);
         CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate_number);
         CREATE INDEX IF NOT EXISTS idx_vehicles_synced ON vehicles(synced);

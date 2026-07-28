@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import GateCard from '@/components/gate/GateCard.vue'
+import PlateDetailModal from '@/components/gate/PlateDetailModal.vue'
 import SyncStatus from '@/components/sync/SyncStatus.vue'
 import api from '@/services/api'
 
@@ -31,6 +32,7 @@ const gates = ref([
 
 const recentPlates = ref([])
 const loading = ref(false)
+const selectedPlate = ref(null)
 let refreshTimer = null
 
 const fetchRecentPlates = async () => {
@@ -58,7 +60,6 @@ const fetchRecentPlates = async () => {
 }
 
 const handleCapture = (direction) => {
-  // Refresh data setelah capture
   fetchRecentPlates()
 }
 
@@ -68,7 +69,7 @@ const handleRefresh = () => {
 
 onMounted(() => {
   fetchRecentPlates()
-  refreshTimer = setInterval(fetchRecentPlates, 15000) // refresh setiap 15 detik
+  refreshTimer = setInterval(fetchRecentPlates, 15000)
 })
 
 onUnmounted(() => {
@@ -77,11 +78,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6 space-y-6">
     <!-- Grid: Gate Cards + Sync Status -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <!-- Gate Cards (2 kolom) -->
-      <div class="xl:col-span-2 space-y-6">
+      <div class="xl:col-span-2 space-y-6 min-w-0">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GateCard
             v-for="gate in gates"
@@ -100,8 +101,10 @@ onUnmounted(() => {
             <table class="w-full text-xs">
               <thead>
                 <tr class="border-b border-zinc-800">
+                  <th class="text-left py-2 px-3 text-zinc-500 font-medium">Event ID</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Waktu</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Arah</th>
+                  <th class="text-left py-2 px-3 text-zinc-500 font-medium">Gambar</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Plat</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Confidence</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Sync</th>
@@ -111,8 +114,12 @@ onUnmounted(() => {
                 <tr
                   v-for="plate in recentPlates"
                   :key="plate.id"
-                  class="border-b border-zinc-800/50 hover:bg-zinc-800/30"
+                  class="border-b border-zinc-800/50 hover:bg-zinc-800/30 cursor-pointer"
+                  @click="selectedPlate = plate"
                 >
+                  <td class="py-2 px-3 font-mono text-[10px] text-zinc-500">
+                    {{ plate.event_id ? plate.event_id.substring(0, 8) + '...' : '---' }}
+                  </td>
                   <td class="py-2 px-3 font-mono text-zinc-300">
                     {{ plate.created_at ? new Date(plate.created_at).toLocaleString('id-ID') : '---' }}
                   </td>
@@ -127,6 +134,15 @@ onUnmounted(() => {
                     >
                       {{ plate.direction }}
                     </span>
+                  </td>
+                  <td class="py-2 px-3">
+                    <img
+                      v-if="plate.plate_image_url"
+                      :src="plate.plate_image_url"
+                      alt="Plat"
+                      class="w-16 h-10 object-contain rounded border border-zinc-700 bg-zinc-950"
+                    />
+                    <span v-else class="text-zinc-600">---</span>
                   </td>
                   <td class="py-2 px-3 font-mono font-bold text-white">{{ plate.plate_number }}</td>
                   <td class="py-2 px-3 text-zinc-300">
@@ -143,7 +159,7 @@ onUnmounted(() => {
                   </td>
                 </tr>
                 <tr v-if="!recentPlates.length">
-                  <td colspan="5" class="py-4 text-center text-zinc-500">Belum ada data</td>
+                  <td colspan="7" class="py-4 text-center text-zinc-500">Belum ada data</td>
                 </tr>
               </tbody>
             </table>
@@ -156,5 +172,11 @@ onUnmounted(() => {
         <SyncStatus />
       </div>
     </div>
+    <!-- Modal Detail -->
+    <PlateDetailModal
+      v-if="selectedPlate"
+      :plate="selectedPlate"
+      @close="selectedPlate = null"
+    />
   </div>
 </template>

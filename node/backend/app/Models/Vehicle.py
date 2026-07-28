@@ -10,6 +10,7 @@ from typing import Optional
 @dataclass
 class Vehicle:
     id: Optional[int] = None
+    event_id: str = ""  # UUID, dibuat saat capture
     direction: str = ""  # "masuk" / "keluar"
     plate_number: str = ""
     plate_image_path: Optional[str] = None
@@ -24,6 +25,7 @@ class Vehicle:
         """Buat Vehicle dari sqlite3.Row."""
         return cls(
             id=row["id"],
+            event_id=row["event_id"],
             direction=row["direction"],
             plate_number=row["plate_number"],
             plate_image_path=row["plate_image_path"],
@@ -37,6 +39,7 @@ class Vehicle:
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "event_id": self.event_id,
             "direction": self.direction,
             "plate_number": self.plate_number,
             "plate_image_path": self.plate_image_path,
