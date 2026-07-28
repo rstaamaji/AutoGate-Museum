@@ -30,7 +30,7 @@ class RelayController:
                 )
 
             address = max(payload.channel - 1, 0)
-            result = client.write_coil(address, payload.status, slave=1)
+            result = client.write_coil(address, payload.status)
             client.close()
 
             if result.isError():
@@ -74,20 +74,39 @@ class RelayController:
 
     @staticmethod
     async def open_and_close_delayed(channel: int, delay_seconds: int = 15):
-        """Buka relay, tunggu, tutup kembali. Background task."""
+        """Buka gate (trigger buka 1s), tunggu, tutup gate (trigger tutup 1s). Background task."""
         try:
-            logger.info(f"Membuka relay channel {channel}...")
+            # Channel buka adalah `channel` (1 untuk Masuk, 4 untuk Keluar)
+            # Channel tutup adalah `channel + 1` (2 untuk Masuk, 5 untuk Keluar)
+            close_channel = channel + 1
+
+            logger.info(f"Membuka gate (Trigger channel {channel} ON selama 1s)...")
             RelayController.control(
                 RelayControlRequest(channel=channel, status=True),
                 triggered_by="auto",
             )
 
-            await asyncio.sleep(delay_seconds)
+            await asyncio.sleep(1)
 
-            logger.info(f"Menutup relay channel {channel} setelah {delay_seconds}s...")
             RelayController.control(
                 RelayControlRequest(channel=channel, status=False),
                 triggered_by="auto",
             )
+
+            logger.info(f"Menunggu {delay_seconds} detik sebelum menutup gate...")
+            await asyncio.sleep(delay_seconds)
+
+            logger.info(f"Menutup gate (Trigger channel {close_channel} ON selama 1s)...")
+            RelayController.control(
+                RelayControlRequest(channel=close_channel, status=True),
+                triggered_by="auto",
+            )
+
+            await asyncio.sleep(1)
+
+            RelayController.control(
+                RelayControlRequest(channel=close_channel, status=False),
+                triggered_by="auto",
+            )
         except Exception as e:
-            logger.error(f"Gagal auto-close relay channel {channel}: {e}")
+            logger.error(f"Gagal auto-close relay untuk gate {channel}: {e}")

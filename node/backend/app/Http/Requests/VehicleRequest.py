@@ -18,6 +18,7 @@ class VehicleCaptureRequest(BaseModel):
 
 class VehicleOut(BaseModel):
     id: int
+    event_id: str
     direction: Direction
     plate_number: str
     plate_image_url: Optional[str] = None
@@ -37,4 +38,5 @@ class VehicleCaptureOut(BaseModel):
     """Response POST /api/plates/{direction}."""
     ignored: bool
     reason: Optional[str] = None
+    validated: Optional[bool] = None  # True=valid, False=ditolak, None=tidak perlu validasi (masuk)
     vehicle: Optional[VehicleOut] = None

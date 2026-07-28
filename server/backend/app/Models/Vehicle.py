@@ -1,10 +1,9 @@
 """
-Model Vehicle — Server.
-Data kendaraan yang diterima dari pos satpam (node).
+Model Vehicle — data kendaraan (plat, tipe, cc, pemilik).
+Dicatat otomatis saat sync dari node jika plat belum ada.
 """
-from datetime import datetime
-
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -13,13 +12,12 @@ from app.database import Base
 class Vehicle(Base):
     __tablename__ = "vehicles"
 
-    id = Column(Integer, primary_key=True, index=True)
-    node_id = Column(String(50), index=True, nullable=False)  # identifier pos satpam
-    direction = Column(String(10), index=True, nullable=False)  # "masuk" / "keluar"
-    plate_number = Column(String(20), index=True, nullable=False)
-    plate_image_path = Column(String(255), nullable=True)
-    scene_image_path = Column(String(255), nullable=True)
-    confidence = Column(Float, nullable=True)
-    captured_at = Column(DateTime, nullable=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    plate_number = Column(String(20), unique=True, nullable=False, index=True)
+    vehicle_type = Column(String(50), nullable=True)   # mobil, motor, truk, dll
+    cc = Column(Integer, nullable=True)
+    owner_id = Column(Integer, ForeignKey("vehicle_owners.id"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    synced_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    owner = relationship("VehicleOwner", lazy="joined")
