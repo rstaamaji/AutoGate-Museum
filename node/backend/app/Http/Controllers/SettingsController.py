@@ -20,12 +20,14 @@ EDITABLE_KEYS = {
     "CAMERA_IN_PASSWORD",
     "CAMERA_IN_CHANNEL",
     "CAMERA_IN_USE_HTTPS",
+    "CAMERA_IN_INTERVAL",
     # Camera Keluar
     "CAMERA_OUT_HOST",
     "CAMERA_OUT_USER",
     "CAMERA_OUT_PASSWORD",
     "CAMERA_OUT_CHANNEL",
     "CAMERA_OUT_USE_HTTPS",
+    "CAMERA_OUT_INTERVAL",
     # Camera Umum
     "CAMERA_AUTH_TYPE",
     "CAMERA_TIMEOUT",
@@ -54,6 +56,7 @@ def get_settings() -> dict:
             "CAMERA_IN_PASSWORD": env_values.get("CAMERA_IN_PASSWORD", settings.CAMERA_IN_PASSWORD),
             "CAMERA_IN_CHANNEL": env_values.get("CAMERA_IN_CHANNEL", str(settings.CAMERA_IN_CHANNEL)),
             "CAMERA_IN_USE_HTTPS": env_values.get("CAMERA_IN_USE_HTTPS", str(settings.CAMERA_IN_USE_HTTPS).lower()),
+            "CAMERA_IN_INTERVAL": env_values.get("CAMERA_IN_INTERVAL", str(settings.CAMERA_IN_INTERVAL)),
         },
         "camera_out": {
             "CAMERA_OUT_HOST": env_values.get("CAMERA_OUT_HOST", settings.CAMERA_OUT_HOST),
@@ -61,6 +64,7 @@ def get_settings() -> dict:
             "CAMERA_OUT_PASSWORD": env_values.get("CAMERA_OUT_PASSWORD", settings.CAMERA_OUT_PASSWORD),
             "CAMERA_OUT_CHANNEL": env_values.get("CAMERA_OUT_CHANNEL", str(settings.CAMERA_OUT_CHANNEL)),
             "CAMERA_OUT_USE_HTTPS": env_values.get("CAMERA_OUT_USE_HTTPS", str(settings.CAMERA_OUT_USE_HTTPS).lower()),
+            "CAMERA_OUT_INTERVAL": env_values.get("CAMERA_OUT_INTERVAL", str(settings.CAMERA_OUT_INTERVAL)),
         },
         "camera_common": {
             "CAMERA_AUTH_TYPE": env_values.get("CAMERA_AUTH_TYPE", settings.CAMERA_AUTH_TYPE),

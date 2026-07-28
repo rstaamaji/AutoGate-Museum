@@ -39,6 +39,8 @@ const settingsSuccess = ref('')
 const showPassword = ref(false)
 const camForm = ref({})
 
+const currentInterval = ref(1000)
+
 const streamUrl = computed(() => {
   const base = api.getStreamUrl(props.direction)
   return `${base}?t=${cacheBuster.value}`
@@ -46,10 +48,30 @@ const streamUrl = computed(() => {
 
 const startStreamTimer = (intervalMs) => {
   if (streamTimer) clearInterval(streamTimer)
+  const ms = intervalMs || currentInterval.value || 1000
   streamTimer = setInterval(() => {
     cacheBuster.value++
     streamError.value = false
-  }, intervalMs)
+  }, ms)
+}
+
+const loadCameraInterval = async () => {
+  try {
+    const data = await api.getSettings()
+    const section = props.direction === 'masuk' ? 'camera_in' : 'camera_out'
+    const key = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_INTERVAL`
+    if (data[section] && data[section][key]) {
+      const val = parseInt(data[section][key], 10)
+      if (!isNaN(val) && val > 0) {
+        currentInterval.value = val
+        if (!streamSlowMode.value) {
+          startStreamTimer(currentInterval.value)
+        }
+      }
+    }
+  } catch (e) {
+    // Fallback default jika gagal load settings
+  }
 }
 
 const handleCopy = () => {
@@ -125,6 +147,9 @@ const openSettings = async () => {
     const data = await api.getSettings()
     const section = props.direction === 'masuk' ? 'camera_in' : 'camera_out'
     camForm.value = { ...data[section] }
+    const key = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_INTERVAL`
+    const msVal = parseFloat(camForm.value[key] || 1000)
+    camForm.value[key] = (msVal / 1000).toString()
   } catch (err) {
     settingsError.value = err.message
   } finally {
@@ -143,8 +168,23 @@ const saveSettings = async () => {
   settingsError.value = ''
   settingsSuccess.value = ''
   try {
-    const result = await api.updateSettings(camForm.value)
+    const key = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_INTERVAL`
+    const secVal = parseFloat(camForm.value[key])
+    const msVal = isNaN(secVal) || secVal <= 0 ? 1000 : Math.round(secVal * 1000)
+
+    const payload = {
+      ...camForm.value,
+      [key]: msVal.toString(),
+    }
+
+    const result = await api.updateSettings(payload)
     settingsSuccess.value = result.message || 'Berhasil disimpan'
+
+    currentInterval.value = msVal
+    if (!streamSlowMode.value) {
+      startStreamTimer(currentInterval.value)
+    }
+
     setTimeout(() => { settingsSuccess.value = '' }, 2000)
   } catch (err) {
     settingsError.value = err.message
@@ -165,11 +205,14 @@ const onStreamLoad = () => {
   streamError.value = false
   if (streamSlowMode.value) {
     streamSlowMode.value = false
-    startStreamTimer(1000)
+    startStreamTimer(currentInterval.value)
   }
 }
 
-onMounted(() => { startStreamTimer(1000) })
+onMounted(async () => {
+  startStreamTimer(currentInterval.value)
+  await loadCameraInterval()
+})
 onUnmounted(() => { if (streamTimer) clearInterval(streamTimer) })
 </script>
 
@@ -305,6 +348,13 @@ onUnmounted(() => { if (streamTimer) clearInterval(streamTimer) })
                 <option value="true">Ya</option>
               </select>
             </div>
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-500 font-medium mb-1">Interval Live Feed (detik)</label>
+            <input v-model="camForm[`CAMERA_${direction === 'masuk' ? 'IN' : 'OUT'}_INTERVAL`]" type="number" step="0.1" min="0.1"
+              placeholder="1.0"
+              class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500" />
+            <p class="text-[10px] text-zinc-500 mt-1">Interval ambil gambar live feed dalam detik (bisa desimal, contoh: 1 untuk 1 detik, 0.5 untuk setengah detik).</p>
           </div>
 
           <div v-if="settingsSuccess" class="flex items-start gap-2 bg-emerald-950/80 border border-emerald-800/60 rounded-lg px-3 py-2">
