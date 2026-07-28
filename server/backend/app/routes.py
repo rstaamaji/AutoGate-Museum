@@ -16,6 +16,8 @@ Endpoint user (JWT):
 - PUT  /api/nodes/{id} (super_admin)
 - DELETE /api/nodes/{id} (super_admin)
 - CRUD /api/vehicle-owners (admin, super_admin)
+- CRUD /api/vehicle-types (admin, super_admin)
+- PUT  /api/vehicles/{id} (admin, super_admin)
 - GET  /api/vehicles/events (all authenticated)
 - GET  /api/vehicles/history (all authenticated)
 - GET  /api/vehicles/history/{id} (all authenticated)
@@ -43,11 +45,18 @@ from app.Http.Requests.VehicleOwnerRequest import (
     VehicleOwnerOut,
     VehicleOwnerListOut,
 )
+from app.Http.Requests.VehicleTypeRequest import (
+    VehicleTypeCreateRequest,
+    VehicleTypeUpdateRequest,
+    VehicleTypeOut,
+    VehicleTypeListOut,
+)
 from app.Http.Requests.VehicleHistoryRequest import (
     VehicleEventListOut,
     VehicleHistoryOut,
     VehicleHistoryListOut,
 )
+from app.Http.Requests.VehicleUpdateRequest import VehicleUpdateRequest
 
 from app.Http.Controllers.AuthController import login, get_me
 from app.Http.Controllers.UserController import (
@@ -69,7 +78,8 @@ from app.Http.Controllers.VehicleOwnerController import (
     update_owner,
     delete_owner,
 )
-from app.Http.Controllers.VehicleController import search_vehicles, list_vehicles
+from app.Http.Controllers.VehicleController import search_vehicles, list_vehicles, update_vehicle
+from app.Http.Controllers.VehicleTypeController import list_types, create_type, update_type, delete_type
 from app.Http.Controllers.VehicleHistoryController import (
     list_events,
     list_history,
@@ -239,6 +249,61 @@ def api_list_vehicles(
 ):
     """List kendaraan + search (untuk dropdown dan halaman kendaraan)."""
     return list_vehicles(db, q=q, skip=skip, limit=limit)
+
+
+@router.put("/vehicles/{vehicle_id}")
+def api_update_vehicle(
+    vehicle_id: int,
+    request: VehicleUpdateRequest,
+    db: Session = Depends(get_db),
+    _=Depends(require_role("super_admin", "admin")),
+):
+    """Update tipe kendaraan dan/atau cc kendaraan."""
+    return update_vehicle(db, vehicle_id, request)
+
+
+# ══════════════════════════════════════════════════════════════
+# VEHICLE TYPE (admin, super_admin)
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/vehicle-types", response_model=VehicleTypeListOut)
+def api_list_types(
+    db: Session = Depends(get_db),
+    _=Depends(require_role("super_admin", "admin")),
+):
+    """Daftar semua tipe kendaraan."""
+    return list_types(db)
+
+
+@router.post("/vehicle-types", response_model=VehicleTypeOut, status_code=201)
+def api_create_type(
+    request: VehicleTypeCreateRequest,
+    db: Session = Depends(get_db),
+    _=Depends(require_role("super_admin", "admin")),
+):
+    """Tambah tipe kendaraan baru."""
+    return create_type(db, request)
+
+
+@router.put("/vehicle-types/{type_id}", response_model=VehicleTypeOut)
+def api_update_type(
+    type_id: int,
+    request: VehicleTypeUpdateRequest,
+    db: Session = Depends(get_db),
+    _=Depends(require_role("super_admin", "admin")),
+):
+    """Ubah tipe kendaraan."""
+    return update_type(db, type_id, request)
+
+
+@router.delete("/vehicle-types/{type_id}")
+def api_delete_type(
+    type_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(require_role("super_admin", "admin")),
+):
+    """Hapus tipe kendaraan."""
+    return delete_type(db, type_id)
 
 
 # ══════════════════════════════════════════════════════════════

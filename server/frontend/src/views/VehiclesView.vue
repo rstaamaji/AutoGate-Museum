@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Car, Search, Loader2, ChevronLeft, ChevronRight } from '@lucide/vue'
+import { Car, Search, Loader2, ChevronLeft, ChevronRight, Pencil, X, Check, AlertTriangle } from '@lucide/vue'
 import api from '@/services/api'
 
 const vehicles = ref([])
@@ -9,6 +9,18 @@ const total = ref(0)
 const page = ref(0)
 const limit = 50
 const searchQ = ref('')
+
+// Modal edit
+const showModal = ref(false)
+const editingVehicle = ref(null)
+const saving = ref(false)
+const error = ref('')
+const vehicleTypes = ref([])
+
+const form = ref({
+  vehicle_type: '',
+  cc: null,
+})
 
 const fetchVehicles = async () => {
   loading.value = true
@@ -20,6 +32,15 @@ const fetchVehicles = async () => {
     console.error(err)
   } finally {
     loading.value = false
+  }
+}
+
+const fetchVehicleTypes = async () => {
+  try {
+    const data = await api.getVehicleTypes()
+    vehicleTypes.value = data.items || []
+  } catch {
+    vehicleTypes.value = []
   }
 }
 
@@ -39,6 +60,48 @@ const prevPage = () => {
   if (page.value > 0) {
     page.value--
     fetchVehicles()
+  }
+}
+
+const openEdit = (v) => {
+  editingVehicle.value = v
+  form.value = {
+    vehicle_type: v.vehicle_type || '',
+    cc: v.cc ?? null,
+  }
+  error.value = ''
+  showModal.value = true
+  fetchVehicleTypes()
+}
+
+const closeModal = () => {
+  showModal.value = false
+  editingVehicle.value = null
+  error.value = ''
+}
+
+const handleSave = async () => {
+  saving.value = true
+  error.value = ''
+  try {
+    const payload = {}
+    if (form.value.vehicle_type !== (editingVehicle.value.vehicle_type || '')) {
+      payload.vehicle_type = form.value.vehicle_type || null
+    }
+    if (form.value.cc !== (editingVehicle.value.cc ?? null)) {
+      payload.cc = form.value.cc
+    }
+    if (Object.keys(payload).length === 0) {
+      closeModal()
+      return
+    }
+    await api.updateVehicle(editingVehicle.value.id, payload)
+    closeModal()
+    await fetchVehicles()
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    saving.value = false
   }
 }
 
@@ -94,6 +157,7 @@ onMounted(fetchVehicles)
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Tipe</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">CC</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Terdaftar</th>
+              <th class="text-right py-3 px-4 text-zinc-500 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -106,11 +170,16 @@ onMounted(fetchVehicles)
               <td class="py-3 px-4 font-mono font-bold text-white">{{ v.plate_number }}</td>
               <td class="py-3 px-4 text-zinc-300">{{ v.owner_name || '---' }}</td>
               <td class="py-3 px-4 text-zinc-400">{{ v.vehicle_type || '---' }}</td>
-              <td class="py-3 px-4 text-zinc-400">{{ v.cc || '---' }}</td>
+              <td class="py-3 px-4 text-zinc-400">{{ v.cc ?? '---' }}</td>
               <td class="py-3 px-4 text-zinc-500 whitespace-nowrap">{{ formatTime(v.created_at) }}</td>
+              <td class="py-3 px-4 text-right">
+                <button @click="openEdit(v)" class="p-1.5 rounded text-zinc-400 hover:text-blue-400 hover:bg-blue-950/50 transition" title="Edit tipe &amp; CC">
+                  <Pencil class="w-3.5 h-3.5" />
+                </button>
+              </td>
             </tr>
             <tr v-if="!vehicles.length && !loading">
-              <td colspan="6" class="py-6 text-center text-zinc-500">Belum ada kendaraan tercatat</td>
+              <td colspan="7" class="py-6 text-center text-zinc-500">Belum ada kendaraan tercatat</td>
             </tr>
           </tbody>
         </table>
@@ -143,6 +212,75 @@ onMounted(fetchVehicles)
             <ChevronRight class="w-4 h-4" />
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal Edit -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" @click.self="closeModal">
+      <div class="bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/60 w-full max-w-md">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+          <h3 class="text-lg font-bold text-white">Edit Kendaraan</h3>
+          <button @click="closeModal" class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <form @submit.prevent="handleSave" class="p-6 space-y-4">
+          <!-- Plat Nomor (read-only) -->
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Plat Nomor</label>
+            <div class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-400 font-mono">
+              {{ editingVehicle?.plate_number }}
+            </div>
+          </div>
+
+          <!-- Tipe Kendaraan (dropdown) -->
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Tipe Kendaraan</label>
+            <select
+              v-model="form.vehicle_type"
+              class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="" class="bg-zinc-900">-- Pilih tipe --</option>
+              <option
+                v-for="t in vehicleTypes"
+                :key="t.id"
+                :value="t.name"
+                class="bg-zinc-900"
+              >
+                {{ t.name }}
+              </option>
+            </select>
+            <p class="text-[10px] text-zinc-600 mt-1">Tipe diambil dari master data Tipe Kendaraan</p>
+          </div>
+
+          <!-- CC -->
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1">CC</label>
+            <input
+              v-model.number="form.cc"
+              type="number"
+              min="0"
+              max="9999"
+              placeholder="misal: 1500"
+              class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div v-if="error" class="flex items-start gap-2 bg-red-950/80 border border-red-800/60 rounded-lg px-3 py-2">
+            <AlertTriangle class="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+            <p class="text-xs text-red-300">{{ error }}</p>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" @click="closeModal" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium rounded-lg transition">Batal</button>
+            <button type="submit" :disabled="saving" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition disabled:opacity-50">
+              <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
+              <Check v-else class="w-4 h-4" />
+              Simpan
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

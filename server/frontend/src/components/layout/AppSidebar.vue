@@ -9,6 +9,7 @@ import {
   Radio,
   Car,
   CarFront,
+  Tag,
   History,
   List,
   LogOut,
@@ -32,6 +33,7 @@ const navItems = computed(() => {
     { id: 'events', label: 'Event Kendaraan', icon: List, show: true },
     { id: 'vehicles', label: 'Kendaraan', icon: CarFront, show: isAdmin.value },
     { id: 'vehicle-owners', label: 'Pemilik Kendaraan', icon: Car, show: isAdmin.value },
+    { id: 'vehicle-types', label: 'Tipe Kendaraan', icon: Tag, show: isAdmin.value },
     { id: 'nodes', label: 'Kelola Node', icon: Radio, show: isAdmin.value },
     { id: 'users', label: 'Kelola User', icon: Users, show: isSuperAdmin.value },
   ]

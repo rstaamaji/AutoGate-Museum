@@ -243,6 +243,43 @@ class ApiClient {
   }
 
   // ══════════════════════════════════════════
+  // VEHICLE TYPE (admin, super_admin)
+  // ══════════════════════════════════════════
+
+  async getVehicleTypes() {
+    return this.request('/api/vehicle-types')
+  }
+
+  async createVehicleType(data) {
+    return this.request('/api/vehicle-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateVehicleType(typeId, data) {
+    return this.request(`/api/vehicle-types/${typeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteVehicleType(typeId) {
+    return this.request(`/api/vehicle-types/${typeId}`, { method: 'DELETE' })
+  }
+
+  // ══════════════════════════════════════════
+  // VEHICLE UPDATE (admin, super_admin)
+  // ══════════════════════════════════════════
+
+  async updateVehicle(vehicleId, data) {
+    return this.request(`/api/vehicles/${vehicleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // ══════════════════════════════════════════
   // DASHBOARD
   // ══════════════════════════════════════════
 

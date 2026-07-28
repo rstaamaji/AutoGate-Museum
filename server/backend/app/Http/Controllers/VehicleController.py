@@ -6,10 +6,13 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from fastapi import HTTPException, status
+
 from app.Http.Requests.VehicleRequest import (
     VehicleListOut,
     VehicleOut,
 )
+from app.Http.Requests.VehicleUpdateRequest import VehicleUpdateRequest
 from app.Models.Vehicle import Vehicle
 
 
@@ -87,6 +90,34 @@ def index(db: Session, skip: int = 0, limit: int = 100, direction: Optional[str]
         total=total,
         items=[_to_out(v) for v in items],
     )
+
+
+def update_vehicle(db: Session, vehicle_id: int, request: VehicleUpdateRequest) -> dict:
+    """PUT /api/vehicles/{id} — update tipe kendaraan & cc."""
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kendaraan tidak ditemukan",
+        )
+
+    if request.vehicle_type is not None:
+        vehicle.vehicle_type = request.vehicle_type
+    if request.cc is not None:
+        vehicle.cc = request.cc
+
+    db.commit()
+    db.refresh(vehicle)
+
+    return {
+        "id": vehicle.id,
+        "plate_number": vehicle.plate_number,
+        "vehicle_type": vehicle.vehicle_type,
+        "cc": vehicle.cc,
+        "owner_id": vehicle.owner_id,
+        "owner_name": vehicle.owner.owner_name if vehicle.owner else None,
+        "updated_at": vehicle.updated_at.isoformat() if vehicle.updated_at else None,
+    }
 
 
 def _to_out(v: Vehicle) -> VehicleOut:
