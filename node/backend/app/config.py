@@ -60,6 +60,10 @@ class Settings:
     def CAMERA_IN_USE_HTTPS(self) -> bool:
         return _bool(_getenv("CAMERA_IN_USE_HTTPS"), False)
 
+    @property
+    def CAMERA_IN_INTERVAL(self) -> int:
+        return int(_getenv("CAMERA_IN_INTERVAL", "1000"))
+
     # ── Kamera KELUAR ──
     @property
     def CAMERA_OUT_HOST(self) -> str:
@@ -80,6 +84,10 @@ class Settings:
     @property
     def CAMERA_OUT_USE_HTTPS(self) -> bool:
         return _bool(_getenv("CAMERA_OUT_USE_HTTPS"), False)
+
+    @property
+    def CAMERA_OUT_INTERVAL(self) -> int:
+        return int(_getenv("CAMERA_OUT_INTERVAL", "1000"))
 
     # ── Kamera Umum ──
     @property
