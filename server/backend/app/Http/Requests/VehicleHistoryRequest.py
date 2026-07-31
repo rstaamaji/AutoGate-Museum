@@ -17,6 +17,7 @@ class VehicleEventOut(BaseModel):
     plate_image_url: Optional[str] = None
     scene_image_url: Optional[str] = None
     confidence: Optional[float] = None
+    rfid_uid: Optional[str] = None
     captured_at: Optional[str] = None
     created_at: Optional[str] = None
 
@@ -40,6 +41,8 @@ class VehicleHistoryOut(BaseModel):
     exit_node_name: Optional[str] = None
     entry_at: Optional[str] = None
     exit_at: Optional[str] = None
+    entry_rfid: Optional[str] = None
+    exit_rfid: Optional[str] = None
     is_inside: bool = True
     owner_name: Optional[str] = None
     created_at: Optional[str] = None

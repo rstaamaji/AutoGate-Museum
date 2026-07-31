@@ -35,6 +35,7 @@ def _to_event_out(event: VehicleEvent) -> VehicleEventOut:
         plate_image_url=_img_url(event.plate_image_path),
         scene_image_url=_img_url(event.scene_image_path),
         confidence=event.confidence,
+        rfid_uid=event.rfid_uid,
         captured_at=event.captured_at.isoformat() if event.captured_at else None,
         created_at=event.created_at.isoformat() if event.created_at else None,
     )
@@ -52,6 +53,8 @@ def _to_history_out(history: VehicleHistory, entry_node_name=None, exit_node_nam
         exit_node_name=exit_node_name,
         entry_at=history.entry_at.isoformat() if history.entry_at else None,
         exit_at=history.exit_at.isoformat() if history.exit_at else None,
+        entry_rfid=history.entry_rfid,
+        exit_rfid=history.exit_rfid,
         is_inside=history.is_inside,
         owner_name=owner_name,
         created_at=history.created_at.isoformat() if history.created_at else None,
