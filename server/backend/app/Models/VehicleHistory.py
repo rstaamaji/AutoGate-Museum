@@ -19,6 +19,8 @@ class VehicleHistory(Base):
     exit_node_id = Column(String(50), nullable=True)
     entry_at = Column(DateTime, nullable=True)
     exit_at = Column(DateTime, nullable=True)
+    entry_rfid = Column(String(100), nullable=True)
+    exit_rfid = Column(String(100), nullable=True)
     is_inside = Column(Boolean, default=True)  # True=sedang di dalam, False=sudah keluar
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

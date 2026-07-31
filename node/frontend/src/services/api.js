@@ -56,6 +56,15 @@ class ApiClient {
     })
   }
 
+  // ── RFID ──
+
+  async submitRfid(eventId, rfidUid = null) {
+    return this.request('/api/rfid', {
+      method: 'POST',
+      body: JSON.stringify({ event_id: eventId, rfid_uid: rfidUid }),
+    })
+  }
+
   // ── Relay/Gate ──
 
   async controlRelay(channel, status) {

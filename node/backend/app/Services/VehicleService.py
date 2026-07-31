@@ -215,6 +215,7 @@ def _build_sync_payload(vehicle: Vehicle) -> dict:
         "confidence": vehicle.confidence,
         "captured_at": vehicle.captured_at,
         "created_at": vehicle.created_at,
+        "rfid_uid": vehicle.rfid_uid,
     }
 
     # Encode gambar sebagai base64 jika ada
@@ -290,4 +291,5 @@ def to_out_dict(vehicle: Vehicle) -> dict:
         "captured_at": vehicle.captured_at,
         "created_at": vehicle.created_at,
         "synced": bool(vehicle.synced),
+        "rfid_uid": vehicle.rfid_uid,
     }

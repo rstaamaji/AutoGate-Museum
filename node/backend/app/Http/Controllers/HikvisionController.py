@@ -19,12 +19,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import HTTPException, Request, status, BackgroundTasks
+from fastapi import HTTPException, Request, status
 
 from app.config import settings
 from app.database import get_db
 from app.Models.Vehicle import Vehicle
-from app.Http.Controllers.RelayController import RelayController
 from app.Http.Requests.VehicleRequest import VehicleCaptureOut, VehicleOut
 from app.Services import CameraService
 from app.Services.VehicleService import to_out_dict
@@ -218,6 +217,7 @@ def _build_sync_payload(vehicle: Vehicle) -> dict:
         "confidence": vehicle.confidence,
         "captured_at": vehicle.captured_at,
         "created_at": vehicle.created_at,
+        "rfid_uid": vehicle.rfid_uid,
     }
 
     if vehicle.plate_image_path and Path(vehicle.plate_image_path).exists():
@@ -233,7 +233,7 @@ def _build_sync_payload(vehicle: Vehicle) -> dict:
     return payload
 
 
-async def handle_radar_event(request: Request, background_tasks: BackgroundTasks) -> VehicleCaptureOut:
+async def handle_radar_event(request: Request) -> VehicleCaptureOut:
     """
     POST /api/hikvision/radar — terima event dari kamera Hikvision ISAPI.
 
@@ -359,14 +359,12 @@ async def handle_radar_event(request: Request, background_tasks: BackgroundTasks
             (vehicle_id, json.dumps(sync_payload)),
         )
 
-    # ── 8. Buka gate ──
-    relay_channel = 1 if direction == "masuk" else 4
-    background_tasks.add_task(RelayController.open_and_close_delayed, relay_channel, 15)
-
-    logger.info(f"Hikvision: {plate_number} ({direction}) disimpan, gate dibuka")
+    # ── 8. Jangan buka gate dulu — tunggu RFID ──
+    logger.info(f"Hikvision: {plate_number} ({direction}) disimpan, menunggu RFID")
 
     return VehicleCaptureOut(
         ignored=False,
         validated=True if direction == "keluar" else None,
         vehicle=VehicleOut(**to_out_dict(vehicle)),
+        rfid_pending=True,
     )

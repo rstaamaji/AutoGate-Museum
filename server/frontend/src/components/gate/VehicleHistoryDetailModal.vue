@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { X, Car, ArrowDownRight, ArrowUpRight, Loader2, Image as ImageIcon } from '@lucide/vue'
+import { X, Car, ArrowDownRight, ArrowUpRight, Loader2, Image as ImageIcon, Nfc, CheckCircle2, XCircle, AlertTriangle } from '@lucide/vue'
 import api from '@/services/api'
 
 const props = defineProps({
@@ -19,6 +19,14 @@ const exitEvent = ref(null)
 const formatTime = (iso) => {
   if (!iso) return '---'
   return new Date(iso).toLocaleString('id-ID')
+}
+
+const rfidMatchStatus = () => {
+  const h = props.history
+  if (!h.exit_at) return null
+  if (!h.entry_rfid && !h.exit_rfid) return 'none'
+  if (!h.entry_rfid || !h.exit_rfid) return 'incomplete'
+  return h.entry_rfid === h.exit_rfid ? 'match' : 'mismatch'
 }
 
 const handleClose = () => {
@@ -139,6 +147,13 @@ watch(() => props.history, () => {
             </div>
             <p class="text-xs text-zinc-300 font-mono"><span class="text-zinc-500">Waktu:</span> {{ formatTime(history.entry_at) }}</p>
             <p class="text-xs text-zinc-300"><span class="text-zinc-500">Pos/Node:</span> {{ history.entry_node_name || '---' }}</p>
+            <p class="text-xs text-zinc-300 flex items-center gap-1">
+              <span class="text-zinc-500">RFID:</span>
+              <span v-if="history.entry_rfid" class="inline-flex items-center gap-1 font-mono text-violet-300">
+                <Nfc class="w-3 h-3" /> {{ history.entry_rfid }}
+              </span>
+              <span v-else class="text-zinc-600">Tanpa RFID</span>
+            </p>
           </div>
 
           <!-- Keluar -->
@@ -149,7 +164,42 @@ watch(() => props.history, () => {
             </div>
             <p class="text-xs text-zinc-300 font-mono"><span class="text-zinc-500">Waktu:</span> {{ formatTime(history.exit_at) }}</p>
             <p class="text-xs text-zinc-300"><span class="text-zinc-500">Pos/Node:</span> {{ history.exit_node_name || '---' }}</p>
+            <p class="text-xs text-zinc-300 flex items-center gap-1">
+              <span class="text-zinc-500">RFID:</span>
+              <span v-if="history.exit_rfid" class="inline-flex items-center gap-1 font-mono text-violet-300">
+                <Nfc class="w-3 h-3" /> {{ history.exit_rfid }}
+              </span>
+              <span v-else-if="!history.is_inside" class="text-zinc-600">Tanpa RFID</span>
+              <span v-else class="text-zinc-700">---</span>
+            </p>
           </div>
+        </div>
+
+        <!-- RFID Match Status -->
+        <div v-if="rfidMatchStatus()" class="flex items-center gap-2 px-4 py-3 rounded-lg border"
+          :class="{
+            'bg-emerald-950/50 border-emerald-800/60': rfidMatchStatus() === 'match',
+            'bg-red-950/50 border-red-800/60': rfidMatchStatus() === 'mismatch',
+            'bg-amber-950/50 border-amber-800/60': rfidMatchStatus() === 'incomplete',
+            'bg-zinc-950/50 border-zinc-800/60': rfidMatchStatus() === 'none',
+          }"
+        >
+          <template v-if="rfidMatchStatus() === 'match'">
+            <CheckCircle2 class="w-4 h-4 text-emerald-400" />
+            <span class="text-xs font-semibold text-emerald-300">RFID Cocok — kartu masuk dan keluar sama</span>
+          </template>
+          <template v-else-if="rfidMatchStatus() === 'mismatch'">
+            <XCircle class="w-4 h-4 text-red-400" />
+            <span class="text-xs font-semibold text-red-300">RFID Berbeda — kartu masuk dan keluar tidak sama</span>
+          </template>
+          <template v-else-if="rfidMatchStatus() === 'incomplete'">
+            <AlertTriangle class="w-4 h-4 text-amber-400" />
+            <span class="text-xs font-semibold text-amber-300">RFID Parsial — hanya salah satu yang punya RFID</span>
+          </template>
+          <template v-else-if="rfidMatchStatus() === 'none'">
+            <Nfc class="w-4 h-4 text-zinc-500" />
+            <span class="text-xs text-zinc-400">Tanpa RFID — masuk dan keluar tanpa kartu</span>
+          </template>
         </div>
 
         <!-- Loading State -->

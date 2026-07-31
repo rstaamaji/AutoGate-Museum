@@ -40,6 +40,8 @@ def receive_event(db: Session, payload: dict) -> dict:
         - scene_image_base64: gambar scene (opsional)
         - confidence: tingkat kepercayaan (opsional)
         - captured_at: waktu capture (opsional)
+        - rfid_uid: UID RFID (opsional)
+        - is_update: True jika ini update RFID, bukan event baru
     """
     event_id = payload.get("event_id")
     node_id = payload.get("node_id")
@@ -51,6 +53,10 @@ def receive_event(db: Session, payload: dict) -> dict:
 
     if direction not in ("masuk", "keluar"):
         raise HTTPException(status_code=400, detail="direction harus 'masuk' atau 'keluar'")
+
+    # ── Handle update RFID ──
+    if payload.get("is_update"):
+        return _handle_rfid_update(db, event_id, payload.get("rfid_uid"))
 
     # Cek duplikat event_id
     existing = db.query(VehicleEvent).filter(VehicleEvent.event_id == event_id).first()
@@ -115,6 +121,7 @@ def receive_event(db: Session, payload: dict) -> dict:
         plate_image_path=plate_image_path,
         scene_image_path=scene_image_path,
         confidence=payload.get("confidence"),
+        rfid_uid=payload.get("rfid_uid"),
         captured_at=captured_at,
     )
     db.add(event)
@@ -174,6 +181,41 @@ def validate_plate(db: Session, plate_number: str, node_id: str = None) -> dict:
     }
 
 
+def _handle_rfid_update(db: Session, event_id: str, rfid_uid: str | None) -> dict:
+    """Update rfid_uid pada event yang sudah ada + update VehicleHistory."""
+    event = db.query(VehicleEvent).filter(VehicleEvent.event_id == event_id).first()
+    if not event:
+        return {"success": False, "event_id": event_id, "message": "Event tidak ditemukan untuk update RFID"}
+
+    event.rfid_uid = rfid_uid
+
+    # Update VehicleHistory juga
+    if event.direction == "masuk":
+        history = (
+            db.query(VehicleHistory)
+            .filter(VehicleHistory.entry_event_id == event_id)
+            .first()
+        )
+        if history:
+            history.entry_rfid = rfid_uid
+    else:
+        history = (
+            db.query(VehicleHistory)
+            .filter(VehicleHistory.exit_event_id == event_id)
+            .first()
+        )
+        if history:
+            history.exit_rfid = rfid_uid
+
+    db.commit()
+
+    return {
+        "success": True,
+        "event_id": event_id,
+        "message": f"RFID '{rfid_uid}' berhasil di-update",
+    }
+
+
 def _process_entry(db: Session, event: VehicleEvent):
     """
     Proses event masuk:
@@ -184,6 +226,7 @@ def _process_entry(db: Session, event: VehicleEvent):
         plate_number=event.plate_number,
         entry_node_id=event.node_id,
         entry_at=event.captured_at or event.created_at,
+        entry_rfid=event.rfid_uid,
         is_inside=True,
     )
     db.add(history)
@@ -210,6 +253,7 @@ def _process_exit(db: Session, event: VehicleEvent):
         history.exit_event_id = event.event_id
         history.exit_node_id = event.node_id
         history.exit_at = event.captured_at or event.created_at
+        history.exit_rfid = event.rfid_uid
         history.is_inside = False
 
 

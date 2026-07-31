@@ -12,6 +12,7 @@ from app.Http.Controllers.StatusController import get_status
 from app.Http.Controllers.SyncController import get_sync_status, manual_sync
 from app.Http.Controllers.SettingsController import get_settings, update_settings
 from app.Http.Controllers.HikvisionController import handle_radar_event
+from app.Http.Controllers.RfidController import handle_rfid
 from app.Http.Requests.VehicleRequest import (
     Direction,
     VehicleCaptureOut,
@@ -19,6 +20,7 @@ from app.Http.Requests.VehicleRequest import (
     VehicleListOut,
 )
 from app.Http.Requests.RelayRequest import RelayControlRequest, RelayControlResponse
+from app.Http.Requests.RfidRequest import RfidRequest, RfidResponse
 from app.Http.Middleware.auth import verify_api_key
 
 router = APIRouter(prefix="/api")
@@ -59,10 +61,17 @@ def create_plate(
 @router.post("/hikvision/radar", response_model=VehicleCaptureOut, status_code=201)
 async def hikvision_radar(
     request: Request,
-    background_tasks: BackgroundTasks,
 ):
     """Terima event ISAPI dari kamera Hikvision (multipart/form-data + XML)."""
-    return await handle_radar_event(request, background_tasks)
+    return await handle_radar_event(request)
+
+
+# ── RFID ──
+
+@router.post("/rfid", response_model=RfidResponse)
+def submit_rfid(payload: RfidRequest, background_tasks: BackgroundTasks):
+    """Input RFID setelah ANPR capture — update data + buka gate."""
+    return handle_rfid(payload.event_id, payload.rfid_uid, background_tasks)
 
 
 # ── Relay/Gate ──

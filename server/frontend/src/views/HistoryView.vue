@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { History, Search, Filter, ChevronLeft, ChevronRight, Eye } from '@lucide/vue'
+import { History, Search, Filter, ChevronLeft, ChevronRight, Eye, Nfc, CheckCircle2, AlertTriangle, XCircle } from '@lucide/vue'
 import VehicleHistoryDetailModal from '@/components/gate/VehicleHistoryDetailModal.vue'
 import api from '@/services/api'
 
@@ -63,6 +63,17 @@ const formatTime = (iso) => {
   return new Date(iso).toLocaleString('id-ID')
 }
 
+const rfidMatchStatus = (h) => {
+  // Tidak ada exit → belum selesai
+  if (!h.exit_at) return null
+  // Keduanya tidak punya RFID → N/A
+  if (!h.entry_rfid && !h.exit_rfid) return 'none'
+  // Salah satu tidak punya RFID → incomplete
+  if (!h.entry_rfid || !h.exit_rfid) return 'incomplete'
+  // Cocok atau tidak
+  return h.entry_rfid === h.exit_rfid ? 'match' : 'mismatch'
+}
+
 onMounted(() => {
   fetchHistory()
   refreshTimer = setInterval(fetchHistory, 30000)
@@ -118,6 +129,9 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Keluar</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Node Masuk</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Node Keluar</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">RFID Masuk</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">RFID Keluar</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Cocok?</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Status</th>
               <th class="text-center py-3 px-4 text-zinc-500 font-medium">Aksi</th>
             </tr>
@@ -150,6 +164,50 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
               </td>
               <td class="py-3 px-4">
                 <span
+                  v-if="h.entry_rfid"
+                  class="inline-flex items-center gap-1 font-mono text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded"
+                >
+                  <Nfc class="w-3 h-3" />
+                  {{ h.entry_rfid }}
+                </span>
+                <span v-else class="text-zinc-600 text-[10px]">Tanpa RFID</span>
+              </td>
+              <td class="py-3 px-4">
+                <span
+                  v-if="h.exit_rfid"
+                  class="inline-flex items-center gap-1 font-mono text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded"
+                >
+                  <Nfc class="w-3 h-3" />
+                  {{ h.exit_rfid }}
+                </span>
+                <span v-else-if="!h.is_inside" class="text-zinc-600 text-[10px]">Tanpa RFID</span>
+                <span v-else class="text-zinc-700 text-[10px]">---</span>
+              </td>
+              <td class="py-3 px-4">
+                <template v-if="rfidMatchStatus(h) === 'match'">
+                  <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
+                    <CheckCircle2 class="w-3.5 h-3.5" /> Cocok
+                  </span>
+                </template>
+                <template v-else-if="rfidMatchStatus(h) === 'mismatch'">
+                  <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-red-400">
+                    <XCircle class="w-3.5 h-3.5" /> Beda
+                  </span>
+                </template>
+                <template v-else-if="rfidMatchStatus(h) === 'incomplete'">
+                  <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-400">
+                    <AlertTriangle class="w-3.5 h-3.5" /> Parsial
+                  </span>
+                </template>
+                <template v-else-if="rfidMatchStatus(h) === 'none'">
+                  <span class="text-zinc-600 text-[10px]">Tanpa RFID</span>
+                </template>
+                <template v-else>
+                  <span class="text-zinc-700 text-[10px]">---</span>
+                </template>
+              </td>
+              <td class="py-3 px-4">
+                <span
                   :class="[
                     'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
                     h.is_inside
@@ -172,7 +230,7 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
               </td>
             </tr>
             <tr v-if="!history.length && !loading">
-              <td colspan="8" class="py-6 text-center text-zinc-500">Belum ada data riwayat</td>
+              <td colspan="12" class="py-6 text-center text-zinc-500">Belum ada data riwayat</td>
             </tr>
           </tbody>
         </table>

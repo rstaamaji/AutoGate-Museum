@@ -17,7 +17,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['capture', 'refresh'])
+const emit = defineEmits(['capture', 'refresh', 'capture-response'])
 
 const copied = ref(false)
 const capturing = ref(false)
@@ -87,17 +87,20 @@ const handleCapture = async () => {
   captureSuccess.value = ''
   try {
     const result = await api.capturePlate(props.direction)
-    if (props.direction === 'keluar' && result.validated === true) {
-      captureSuccess.value = `Plat terverifikasi — gate dibuka`
-    } else if (props.direction === 'keluar' && result.validated === false) {
+
+    if (props.direction === 'keluar' && result.validated === false) {
       captureError.value = result.reason || 'Plat tidak valid untuk keluar — gate tetap tertutup'
     } else if (result.ignored) {
       captureError.value = result.reason || 'Plat tidak terbaca'
+    } else if (result.rfid_pending) {
+      captureSuccess.value = 'Plat terdeteksi — silakan input RFID'
     } else {
-      captureSuccess.value = 'Capture berhasil — gate dibuka'
+      captureSuccess.value = 'Capture berhasil'
     }
+
     emit('capture', props.direction)
     emit('refresh')
+    emit('capture-response', result)
   } catch (err) {
     captureError.value = err.message || 'Gagal capture'
   } finally {
