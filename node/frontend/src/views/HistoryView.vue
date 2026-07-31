@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import {
   Search, Calendar, Filter, ChevronLeft, ChevronRight,
-  RefreshCw, Loader2, History, X,
+  RefreshCw, Loader2, History, X, Nfc,
 } from '@lucide/vue'
 import PlateDetailModal from '@/components/gate/PlateDetailModal.vue'
 import api from '@/services/api'
@@ -194,6 +194,7 @@ onMounted(() => {
               <th class="text-left py-3 px-3 text-zinc-400 font-semibold">Arah</th>
               <th class="text-left py-3 px-3 text-zinc-400 font-semibold">Foto Plat</th>
               <th class="text-left py-3 px-3 text-zinc-400 font-semibold">Plat Nomor</th>
+              <th class="text-left py-3 px-3 text-zinc-400 font-semibold">RFID</th>
               <th class="text-left py-3 px-3 text-zinc-400 font-semibold">Confidence</th>
               <th class="text-left py-3 px-3 text-zinc-400 font-semibold">Status Sync</th>
             </tr>
@@ -235,6 +236,16 @@ onMounted(() => {
               <td class="py-2.5 px-3 font-mono font-bold text-white text-sm tracking-wider">
                 {{ item.plate_number }}
               </td>
+              <td class="py-2.5 px-3">
+                <span
+                  v-if="item.rfid_uid"
+                  class="inline-flex items-center gap-1 font-mono text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded"
+                >
+                  <Nfc class="w-3 h-3" />
+                  {{ item.rfid_uid }}
+                </span>
+                <span v-else class="text-zinc-600">---</span>
+              </td>
               <td class="py-2.5 px-3 text-zinc-300">
                 {{ item.confidence ? `${item.confidence.toFixed(1)}%` : '---' }}
               </td>
@@ -253,7 +264,7 @@ onMounted(() => {
               </td>
             </tr>
             <tr v-if="!loading && !items.length">
-              <td colspan="7" class="py-8 text-center text-zinc-500">
+              <td colspan="8" class="py-8 text-center text-zinc-500">
                 Tidak ada data riwayat yang ditemukan.
               </td>
             </tr>

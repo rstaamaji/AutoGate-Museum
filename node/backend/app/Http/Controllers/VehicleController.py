@@ -2,8 +2,7 @@
 Controller kendaraan — Pos Satpam.
 Trigger kamera, simpan ke SQLite, queue sync.
 
-Gate masuk: capture → simpan → buka pintu
-Gate keluar: capture → validasi server → simpan → buka pintu
+Flow baru: capture → simpan → tunggu RFID → buka pintu
 """
 from typing import Optional
 
@@ -16,7 +15,6 @@ from app.Http.Requests.VehicleRequest import (
     VehicleOut,
 )
 from app.Services import VehicleService
-from app.Http.Controllers.RelayController import RelayController
 
 
 def index(
@@ -44,21 +42,17 @@ def index(
 
 def store(direction: str, payload: VehicleCaptureRequest, background_tasks: BackgroundTasks) -> VehicleCaptureOut:
     """
-    POST /api/plates/{direction} — trigger kamera, simpan, buka gate.
+    POST /api/plates/{direction} — trigger kamera, simpan, tunggu RFID.
 
-    Untuk masuk: langsung capture, simpan, buka gate.
-    Untuk keluar: capture, validasi ke server, baru simpan + buka gate.
+    Flow: capture → simpan → return rfid_pending → frontend tampilkan modal RFID.
+    Gate dibuka setelah RFID diinput (atau dilewati) via POST /api/rfid.
     """
     outcome = VehicleService.capture_and_save(direction=direction, channel=payload.channel)
-
-    # Jika plat terbaca dan valid, otomatis buka gate
-    if not outcome.ignored and outcome.vehicle:
-        relay_channel = 1 if direction == "masuk" else 4
-        background_tasks.add_task(RelayController.open_and_close_delayed, relay_channel, 15)
 
     return VehicleCaptureOut(
         ignored=outcome.ignored,
         reason=outcome.reason,
         validated=outcome.validated,
         vehicle=VehicleOut(**VehicleService.to_out_dict(outcome.vehicle)) if outcome.vehicle else None,
+        rfid_pending=not outcome.ignored and outcome.vehicle is not None,
     )

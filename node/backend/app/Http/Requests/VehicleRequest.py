@@ -27,6 +27,7 @@ class VehicleOut(BaseModel):
     captured_at: Optional[str] = None
     created_at: Optional[str] = None
     synced: bool = False
+    rfid_uid: Optional[str] = None
 
 
 class VehicleListOut(BaseModel):
@@ -40,3 +41,5 @@ class VehicleCaptureOut(BaseModel):
     reason: Optional[str] = None
     validated: Optional[bool] = None  # True=valid, False=ditolak, None=tidak perlu validasi (masuk)
     vehicle: Optional[VehicleOut] = None
+    rfid_pending: bool = False  # True = frontend tampilkan modal RFID
+    rfid_match: Optional[bool] = None  # Hanya untuk keluar: True=cocok, False=beda, None=N/A

@@ -42,6 +42,8 @@ def init_db():
         columns = [col[1] for col in cursor.fetchall()]
         if "event_id" not in columns:
             cursor.execute("ALTER TABLE vehicles ADD COLUMN event_id TEXT;")
+        if "rfid_uid" not in columns:
+            cursor.execute("ALTER TABLE vehicles ADD COLUMN rfid_uid TEXT;")
 
     cursor.executescript("""
         CREATE TABLE IF NOT EXISTS vehicles (
@@ -54,13 +56,15 @@ def init_db():
             confidence REAL,
             captured_at TEXT,
             created_at TEXT DEFAULT (datetime('now')),
-            synced INTEGER DEFAULT 0
+            synced INTEGER DEFAULT 0,
+            rfid_uid TEXT
         );
 
         CREATE INDEX IF NOT EXISTS idx_vehicles_event_id ON vehicles(event_id);
         CREATE INDEX IF NOT EXISTS idx_vehicles_direction ON vehicles(direction);
         CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON vehicles(plate_number);
         CREATE INDEX IF NOT EXISTS idx_vehicles_synced ON vehicles(synced);
+        CREATE INDEX IF NOT EXISTS idx_vehicles_rfid ON vehicles(rfid_uid);
 
         CREATE TABLE IF NOT EXISTS sync_queue (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Activity, Search, Filter, Camera, ArrowDownRight, ArrowUpRight, Loader2 } from '@lucide/vue'
+import { Activity, Search, Filter, Camera, ArrowDownRight, ArrowUpRight, Loader2, Nfc } from '@lucide/vue'
 import api from '@/services/api'
 
 const events = ref([])
@@ -110,6 +110,7 @@ onMounted(fetchEvents)
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Plat</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Arah</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Node</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">RFID</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Confidence</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Gambar</th>
             </tr>
@@ -137,6 +138,16 @@ onMounted(fetchEvents)
                 </span>
               </td>
               <td class="py-3 px-4 text-zinc-400 font-mono text-[10px]">{{ e.node_id }}</td>
+              <td class="py-3 px-4">
+                <span
+                  v-if="e.rfid_uid"
+                  class="inline-flex items-center gap-1 font-mono text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded"
+                >
+                  <Nfc class="w-3 h-3" />
+                  {{ e.rfid_uid }}
+                </span>
+                <span v-else class="text-zinc-600">---</span>
+              </td>
               <td class="py-3 px-4 text-zinc-400">{{ e.confidence ? `${e.confidence}%` : '---' }}</td>
               <td class="py-3 px-4">
                 <div class="flex gap-1">
@@ -163,7 +174,7 @@ onMounted(fetchEvents)
               </td>
             </tr>
             <tr v-if="!events.length && !loading">
-              <td colspan="6" class="py-6 text-center text-zinc-500">Belum ada event</td>
+              <td colspan="7" class="py-6 text-center text-zinc-500">Belum ada event</td>
             </tr>
           </tbody>
         </table>

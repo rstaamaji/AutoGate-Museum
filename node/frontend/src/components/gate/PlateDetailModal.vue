@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
-import { X, Car, ExternalLink } from '@lucide/vue'
+import { X, Car, ExternalLink, Nfc } from '@lucide/vue'
 
 const props = defineProps({
   plate: {
@@ -54,7 +54,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       <!-- Body -->
       <div class="p-6 space-y-6">
         <!-- Info Ringkas -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
             <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Plat</p>
             <p class="text-sm font-bold text-white font-mono mt-0.5">{{ plate.plate_number }}</p>
@@ -85,6 +85,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
             <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Event ID</p>
             <p class="text-[10px] font-mono text-zinc-400 mt-0.5 break-all">{{ plate.event_id || '---' }}</p>
+          </div>
+          <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
+            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">RFID</p>
+            <div class="flex items-center gap-1 mt-0.5">
+              <Nfc v-if="plate.rfid_uid" class="w-3 h-3 text-violet-400" />
+              <p class="text-sm font-bold font-mono" :class="plate.rfid_uid ? 'text-violet-300' : 'text-zinc-600'">
+                {{ plate.rfid_uid || '---' }}
+              </p>
+            </div>
           </div>
         </div>
 

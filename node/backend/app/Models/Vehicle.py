@@ -19,6 +19,7 @@ class Vehicle:
     captured_at: Optional[str] = None
     created_at: Optional[str] = None
     synced: int = 0  # 0 = belum, 1 = sudah
+    rfid_uid: Optional[str] = None
 
     @classmethod
     def from_row(cls, row) -> "Vehicle":
@@ -34,6 +35,7 @@ class Vehicle:
             captured_at=row["captured_at"],
             created_at=row["created_at"],
             synced=row["synced"],
+            rfid_uid=row["rfid_uid"],
         )
 
     def to_dict(self) -> dict:
@@ -48,4 +50,5 @@ class Vehicle:
             "captured_at": self.captured_at,
             "created_at": self.created_at,
             "synced": bool(self.synced),
+            "rfid_uid": self.rfid_uid,
         }

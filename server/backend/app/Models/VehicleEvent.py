@@ -19,5 +19,6 @@ class VehicleEvent(Base):
     plate_image_path = Column(String(255), nullable=True)
     scene_image_path = Column(String(255), nullable=True)
     confidence = Column(Float, nullable=True)
+    rfid_uid = Column(String(100), nullable=True, index=True)
     captured_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # waktu diterima server
