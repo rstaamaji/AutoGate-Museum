@@ -11,7 +11,11 @@ from app.Http.Controllers.RelayController import RelayController
 from app.Http.Controllers.StatusController import get_status
 from app.Http.Controllers.SyncController import get_sync_status, manual_sync
 from app.Http.Controllers.SettingsController import get_settings, update_settings
-from app.Http.Controllers.HikvisionController import handle_radar_event
+from app.Http.Controllers.HikvisionController import (
+    handle_radar_event,
+    handle_radar_event_masuk,
+    handle_radar_event_keluar,
+)
 from app.Http.Controllers.RfidController import handle_rfid
 from app.Http.Requests.VehicleRequest import (
     Direction,
@@ -62,8 +66,25 @@ def create_plate(
 async def hikvision_radar(
     request: Request,
 ):
-    """Terima event ISAPI dari kamera Hikvision (multipart/form-data + XML)."""
+    """Terima event ISAPI dari kamera Hikvision (auto-detect IP)."""
     return await handle_radar_event(request)
+
+
+@router.post("/hikvision/radar/masuk", response_model=VehicleCaptureOut, status_code=201)
+async def hikvision_radar_masuk(
+    request: Request,
+):
+    """Terima event ISAPI dari kamera Hikvision Masuk."""
+    return await handle_radar_event_masuk(request)
+
+
+@router.post("/hikvision/radar/keluar", response_model=VehicleCaptureOut, status_code=201)
+async def hikvision_radar_keluar(
+    request: Request,
+):
+    """Terima event ISAPI dari kamera Hikvision Keluar."""
+    return await handle_radar_event_keluar(request)
+
 
 
 # ── RFID ──

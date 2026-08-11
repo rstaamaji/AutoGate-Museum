@@ -233,7 +233,7 @@ def _build_sync_payload(vehicle: Vehicle) -> dict:
     return payload
 
 
-async def handle_radar_event(request: Request) -> VehicleCaptureOut:
+async def handle_radar_event(request: Request, forced_direction: Optional[str] = None) -> VehicleCaptureOut:
     """
     POST /api/hikvision/radar — terima event dari kamera Hikvision ISAPI.
 
@@ -263,7 +263,7 @@ async def handle_radar_event(request: Request) -> VehicleCaptureOut:
     info = _extract_from_xml(xml_bytes)
     camera_ip = info["ip_address"]
 
-    if not camera_ip:
+    if not camera_ip and not forced_direction:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tag <ipAddress> tidak ditemukan atau kosong dalam XML.",
@@ -272,19 +272,22 @@ async def handle_radar_event(request: Request) -> VehicleCaptureOut:
     logger.info(f"Hikvision event dari IP: {camera_ip}")
 
     # ── 3. Cocokkan IP → direction ──
-    ip_in = settings.CAMERA_IN_HOST.strip()
-    ip_out = settings.CAMERA_OUT_HOST.strip()
-
-    if camera_ip == ip_in:
-        direction = "masuk"
-    elif camera_ip == ip_out:
-        direction = "keluar"
+    if forced_direction:
+        direction = forced_direction
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"IP kamera '{camera_ip}' tidak dikenal. "
-                   f"Expected IN={ip_in} atau OUT={ip_out}.",
-        )
+        ip_in = settings.CAMERA_IN_HOST.strip()
+        ip_out = settings.CAMERA_OUT_HOST.strip()
+
+        if camera_ip == ip_in:
+            direction = "masuk"
+        elif camera_ip == ip_out:
+            direction = "keluar"
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"IP kamera '{camera_ip}' tidak dikenal. "
+                       f"Expected IN={ip_in} atau OUT={ip_out}.",
+            )
 
     logger.info(f"Direction ditentukan: {direction} (IP: {camera_ip})")
 
@@ -368,3 +371,14 @@ async def handle_radar_event(request: Request) -> VehicleCaptureOut:
         vehicle=VehicleOut(**to_out_dict(vehicle)),
         rfid_pending=True,
     )
+
+
+async def handle_radar_event_masuk(request: Request) -> VehicleCaptureOut:
+    """POST /api/hikvision/radar/masuk — terima event dari kamera ISAPI masuk."""
+    return await handle_radar_event(request, forced_direction="masuk")
+
+
+async def handle_radar_event_keluar(request: Request) -> VehicleCaptureOut:
+    """POST /api/hikvision/radar/keluar — terima event dari kamera ISAPI keluar."""
+    return await handle_radar_event(request, forced_direction="keluar")
+

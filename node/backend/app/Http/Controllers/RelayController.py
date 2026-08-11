@@ -73,12 +73,11 @@ class RelayController:
             raise HTTPException(status_code=500, detail=f"Error internal: {e}")
 
     @staticmethod
-    async def open_and_close_delayed(channel: int, delay_seconds: int = 15):
+    async def open_and_close_delayed(channel: int, delay_seconds: int = 15, close_channel: int | None = None):
         """Buka gate (trigger buka 1s), tunggu, tutup gate (trigger tutup 1s). Background task."""
         try:
-            # Channel buka adalah `channel` (1 untuk Masuk, 4 untuk Keluar)
-            # Channel tutup adalah `channel + 1` (2 untuk Masuk, 5 untuk Keluar)
-            close_channel = channel + 1
+            if close_channel is None:
+                close_channel = channel + 1
 
             logger.info(f"Membuka gate (Trigger channel {channel} ON selama 1s)...")
             RelayController.control(

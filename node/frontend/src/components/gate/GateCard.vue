@@ -41,6 +41,9 @@ const camForm = ref({})
 
 const currentInterval = ref(1000)
 
+const currentOpenChannel = ref(props.direction === 'masuk' ? 1 : 4)
+const currentCloseChannel = ref(props.direction === 'masuk' ? 2 : 5)
+
 const streamUrl = computed(() => {
   const base = api.getStreamUrl(props.direction)
   return `${base}?t=${cacheBuster.value}`
@@ -60,13 +63,26 @@ const loadCameraInterval = async () => {
     const data = await api.getSettings()
     const section = props.direction === 'masuk' ? 'camera_in' : 'camera_out'
     const key = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_INTERVAL`
-    if (data[section] && data[section][key]) {
-      const val = parseInt(data[section][key], 10)
-      if (!isNaN(val) && val > 0) {
-        currentInterval.value = val
-        if (!streamSlowMode.value) {
-          startStreamTimer(currentInterval.value)
+    const openKey = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_RELAY_OPEN`
+    const closeKey = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_RELAY_CLOSE`
+
+    if (data[section]) {
+      if (data[section][key]) {
+        const val = parseInt(data[section][key], 10)
+        if (!isNaN(val) && val > 0) {
+          currentInterval.value = val
+          if (!streamSlowMode.value) {
+            startStreamTimer(currentInterval.value)
+          }
         }
+      }
+      if (data[section][openKey]) {
+        const openVal = parseInt(data[section][openKey], 10)
+        if (!isNaN(openVal)) currentOpenChannel.value = openVal
+      }
+      if (data[section][closeKey]) {
+        const closeVal = parseInt(data[section][closeKey], 10)
+        if (!isNaN(closeVal)) currentCloseChannel.value = closeVal
       }
     }
   } catch (e) {
@@ -112,7 +128,7 @@ const handleOpenGate = async () => {
   relayLoading.value = true
   relayError.value = ''
   try {
-    const channel = props.direction === 'masuk' ? 1 : 4
+    const channel = currentOpenChannel.value
     await api.controlRelay(channel, true)
     await new Promise(resolve => setTimeout(resolve, 1000))
     await api.controlRelay(channel, false)
@@ -128,7 +144,7 @@ const handleCloseGate = async () => {
   relayLoading.value = true
   relayError.value = ''
   try {
-    const channel = props.direction === 'masuk' ? 2 : 5
+    const channel = currentCloseChannel.value
     await api.controlRelay(channel, true)
     await new Promise(resolve => setTimeout(resolve, 1000))
     await api.controlRelay(channel, false)
@@ -151,8 +167,18 @@ const openSettings = async () => {
     const section = props.direction === 'masuk' ? 'camera_in' : 'camera_out'
     camForm.value = { ...data[section] }
     const key = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_INTERVAL`
+    const openKey = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_RELAY_OPEN`
+    const closeKey = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_RELAY_CLOSE`
+
     const msVal = parseFloat(camForm.value[key] || 1000)
     camForm.value[key] = (msVal / 1000).toString()
+
+    if (!camForm.value[openKey]) {
+      camForm.value[openKey] = props.direction === 'masuk' ? '1' : '4'
+    }
+    if (!camForm.value[closeKey]) {
+      camForm.value[closeKey] = props.direction === 'masuk' ? '2' : '5'
+    }
   } catch (err) {
     settingsError.value = err.message
   } finally {
@@ -171,7 +197,11 @@ const saveSettings = async () => {
   settingsError.value = ''
   settingsSuccess.value = ''
   try {
-    const key = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}_INTERVAL`
+    const prefix = `CAMERA_${props.direction === 'masuk' ? 'IN' : 'OUT'}`
+    const key = `${prefix}_INTERVAL`
+    const openKey = `${prefix}_RELAY_OPEN`
+    const closeKey = `${prefix}_RELAY_CLOSE`
+
     const secVal = parseFloat(camForm.value[key])
     const msVal = isNaN(secVal) || secVal <= 0 ? 1000 : Math.round(secVal * 1000)
 
@@ -184,6 +214,11 @@ const saveSettings = async () => {
     settingsSuccess.value = result.message || 'Berhasil disimpan'
 
     currentInterval.value = msVal
+    const openVal = parseInt(camForm.value[openKey], 10)
+    const closeVal = parseInt(camForm.value[closeKey], 10)
+    if (!isNaN(openVal)) currentOpenChannel.value = openVal
+    if (!isNaN(closeVal)) currentCloseChannel.value = closeVal
+
     if (!streamSlowMode.value) {
       startStreamTimer(currentInterval.value)
     }
@@ -339,7 +374,7 @@ onUnmounted(() => { if (streamTimer) clearInterval(streamTimer) })
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[11px] text-zinc-500 font-medium mb-1">Channel</label>
+              <label class="block text-[11px] text-zinc-500 font-medium mb-1">Channel Kamera</label>
               <input v-model="camForm[`CAMERA_${direction === 'masuk' ? 'IN' : 'OUT'}_CHANNEL`]" type="number"
                 class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500" />
             </div>
@@ -350,6 +385,18 @@ onUnmounted(() => { if (streamTimer) clearInterval(streamTimer) })
                 <option value="false">Tidak</option>
                 <option value="true">Ya</option>
               </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[11px] text-zinc-500 font-medium mb-1">Channel Relay Buka</label>
+              <input v-model="camForm[`CAMERA_${direction === 'masuk' ? 'IN' : 'OUT'}_RELAY_OPEN`]" type="number" min="1"
+                class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-zinc-500 font-medium mb-1">Channel Relay Tutup</label>
+              <input v-model="camForm[`CAMERA_${direction === 'masuk' ? 'IN' : 'OUT'}_RELAY_CLOSE`]" type="number" min="1"
+                class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500" />
             </div>
           </div>
           <div>
