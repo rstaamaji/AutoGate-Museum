@@ -64,6 +64,14 @@ class Settings:
     def CAMERA_IN_INTERVAL(self) -> int:
         return int(_getenv("CAMERA_IN_INTERVAL", "1000"))
 
+    @property
+    def CAMERA_IN_RELAY_OPEN(self) -> int:
+        return int(_getenv("CAMERA_IN_RELAY_OPEN", "1"))
+
+    @property
+    def CAMERA_IN_RELAY_CLOSE(self) -> int:
+        return int(_getenv("CAMERA_IN_RELAY_CLOSE", "2"))
+
     # ── Kamera KELUAR ──
     @property
     def CAMERA_OUT_HOST(self) -> str:
@@ -88,6 +96,14 @@ class Settings:
     @property
     def CAMERA_OUT_INTERVAL(self) -> int:
         return int(_getenv("CAMERA_OUT_INTERVAL", "1000"))
+
+    @property
+    def CAMERA_OUT_RELAY_OPEN(self) -> int:
+        return int(_getenv("CAMERA_OUT_RELAY_OPEN", "4"))
+
+    @property
+    def CAMERA_OUT_RELAY_CLOSE(self) -> int:
+        return int(_getenv("CAMERA_OUT_RELAY_CLOSE", "5"))
 
     # ── Kamera Umum ──
     @property

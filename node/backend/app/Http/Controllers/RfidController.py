@@ -114,8 +114,20 @@ def handle_rfid(event_id: str, rfid_uid: str | None, background_tasks) -> dict:
             logger.info(f"RFID match: plat '{vehicle.plate_number}' — RFID cocok")
 
     # Buka gate
-    relay_channel = 1 if vehicle.direction == "masuk" else 4
-    background_tasks.add_task(RelayController.open_and_close_delayed, relay_channel, 15)
+    from app.config import settings
+    if vehicle.direction == "masuk":
+        open_ch = settings.CAMERA_IN_RELAY_OPEN
+        close_ch = settings.CAMERA_IN_RELAY_CLOSE
+    else:
+        open_ch = settings.CAMERA_OUT_RELAY_OPEN
+        close_ch = settings.CAMERA_OUT_RELAY_CLOSE
+
+    background_tasks.add_task(
+        RelayController.open_and_close_delayed,
+        open_ch,
+        15,
+        close_ch
+    )
 
     rfid_status = "dengan RFID" if rfid_uid else "tanpa RFID"
     logger.info(f"RFID: {vehicle.plate_number} ({vehicle.direction}) — gate dibuka {rfid_status}")
