@@ -7,8 +7,8 @@ from pydantic import BaseModel
 
 
 class VehicleOwnerCreateRequest(BaseModel):
-    plate_number: str
-    owner_name: str
+    plate_number: Optional[str] = None
+    owner_name: Optional[str] = None
     owner_address: Optional[str] = None
     owner_phone: Optional[str] = None
     notes: Optional[str] = None
@@ -24,8 +24,8 @@ class VehicleOwnerUpdateRequest(BaseModel):
 
 class VehicleOwnerOut(BaseModel):
     id: int
-    plate_number: str
-    owner_name: str
+    plate_number: Optional[str] = None
+    owner_name: Optional[str] = None
     owner_address: Optional[str] = None
     owner_phone: Optional[str] = None
     notes: Optional[str] = None

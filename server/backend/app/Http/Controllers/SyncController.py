@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import HTTPException
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -34,7 +35,7 @@ def receive_event(db: Session, payload: dict) -> dict:
     Payload:
         - event_id: UUID dari node
         - node_id: identifier node
-        - plate_number: plat nomor
+        - plate_number: plat nomor (opsional)
         - direction: "masuk" / "keluar"
         - plate_image_base64: gambar plat (opsional)
         - scene_image_base64: gambar scene (opsional)
@@ -45,11 +46,14 @@ def receive_event(db: Session, payload: dict) -> dict:
     """
     event_id = payload.get("event_id")
     node_id = payload.get("node_id")
-    plate_number = payload.get("plate_number")
+    plate_number = (payload.get("plate_number") or "").strip() or None
+    rfid_uid = (payload.get("rfid_uid") or "").strip() or None
     direction = payload.get("direction")
 
-    if not event_id or not node_id or not plate_number or not direction:
-        raise HTTPException(status_code=400, detail="event_id, node_id, plate_number, direction wajib diisi")
+    if not event_id or not node_id or not direction:
+        raise HTTPException(status_code=400, detail="event_id, node_id, direction wajib diisi")
+    if not plate_number and not rfid_uid:
+        raise HTTPException(status_code=400, detail="Minimal ada salah satu: plate_number atau rfid_uid")
 
     if direction not in ("masuk", "keluar"):
         raise HTTPException(status_code=400, detail="direction harus 'masuk' atau 'keluar'")
@@ -87,28 +91,42 @@ def receive_event(db: Session, payload: dict) -> dict:
         except (ValueError, TypeError):
             captured_at = None
 
-    # Auto-insert ke tabel vehicles jika plat belum ada
+    # Auto-insert ke tabel vehicles jika plat belum ada, atau jika RFID/card_uid tersedia
     try:
-        existing_vehicle = db.query(Vehicle).filter(Vehicle.plate_number == plate_number).first()
-        if not existing_vehicle:
-            # Cari owner_id dari tabel vehicle_owners jika ada
+        if plate_number or rfid_uid:
             from app.Models.VehicleOwner import VehicleOwner
-            owner = db.query(VehicleOwner).filter(VehicleOwner.plate_number == plate_number).first()
-            new_vehicle = Vehicle(plate_number=plate_number, owner_id=owner.id if owner else None)
-            db.add(new_vehicle)
-            db.flush()
-            print(f"[SYNC] Vehicle baru: id={new_vehicle.id} plate={plate_number} owner_id={new_vehicle.owner_id}")
-        else:
-            # Jika vehicle ada tapi owner_id belum diisi, coba link
-            if existing_vehicle.owner_id is None:
-                from app.Models.VehicleOwner import VehicleOwner
+
+            owner = None
+            if plate_number:
                 owner = db.query(VehicleOwner).filter(VehicleOwner.plate_number == plate_number).first()
-                if owner:
+            elif rfid_uid:
+                owner = db.query(VehicleOwner).filter(VehicleOwner.card_uid == rfid_uid).first()
+
+            if plate_number:
+                existing_vehicle = db.query(Vehicle).filter(Vehicle.plate_number == plate_number).first()
+            elif owner:
+                existing_vehicle = db.query(Vehicle).filter(Vehicle.owner_id == owner.id).first()
+            else:
+                existing_vehicle = None
+
+            if not existing_vehicle:
+                new_vehicle = Vehicle(plate_number=plate_number, owner_id=owner.id if owner else None)
+                db.add(new_vehicle)
+                db.flush()
+                print(
+                    f"[SYNC] Vehicle baru: id={new_vehicle.id} "
+                    f"plate={plate_number or 'NULL'} owner_id={new_vehicle.owner_id} rfid={rfid_uid}"
+                )
+            else:
+                if existing_vehicle.owner_id is None and owner:
                     existing_vehicle.owner_id = owner.id
-                    print(f"[SYNC] Vehicle {plate_number} di-link ke owner_id={owner.id}")
-            print(f"[SYNC] Vehicle sudah ada: id={existing_vehicle.id} plate={plate_number}")
+                    print(f"[SYNC] Vehicle {plate_number or rfid_uid} di-link ke owner_id={owner.id}")
+                print(
+                    f"[SYNC] Vehicle sudah ada: id={existing_vehicle.id} "
+                    f"plate={plate_number or 'NULL'} rfid={rfid_uid}"
+                )
     except Exception as e:
-        print(f"[SYNC] GAGAL insert vehicle '{plate_number}': {e}")
+        print(f"[SYNC] GAGAL insert vehicle '{plate_number or rfid_uid}': {e}")
         db.rollback()
         # Lanjutkan proses event meskipun insert vehicle gagal
 
@@ -121,7 +139,7 @@ def receive_event(db: Session, payload: dict) -> dict:
         plate_image_path=plate_image_path,
         scene_image_path=scene_image_path,
         confidence=payload.get("confidence"),
-        rfid_uid=payload.get("rfid_uid"),
+        rfid_uid=rfid_uid,
         captured_at=captured_at,
     )
     db.add(event)
@@ -138,10 +156,11 @@ def receive_event(db: Session, payload: dict) -> dict:
 
     db.commit()
 
+    identity = plate_number or rfid_uid or "unknown"
     return {
         "success": True,
         "event_id": event_id,
-        "message": f"Event {direction} plat '{plate_number}' dari node '{node_id}' diterima",
+        "message": f"Event {direction} identitas '{identity}' dari node '{node_id}' diterima",
     }
 
 
@@ -232,19 +251,34 @@ def _process_entry(db: Session, event: VehicleEvent):
     db.add(history)
 
 
+def _match_open_history(event: VehicleEvent):
+    """Cari history aktif berdasarkan plate_number atau rfid_uid."""
+    clauses = [VehicleHistory.is_inside == True]
+    match_clauses = []
+
+    if event.plate_number:
+        match_clauses.append(VehicleHistory.plate_number == event.plate_number)
+    if event.rfid_uid:
+        match_clauses.append(
+            or_(VehicleHistory.entry_rfid == event.rfid_uid, VehicleHistory.exit_rfid == event.rfid_uid)
+        )
+
+    if match_clauses:
+        clauses.append(or_(*match_clauses))
+
+    return and_(*clauses)
+
+
 def _process_exit(db: Session, event: VehicleEvent):
     """
     Proses event keluar:
-    - Cari history dengan plate_number sama dan is_inside=True.
+    - Cari history aktif dengan plate_number atau rfid_uid yang cocok.
     - Jika ketemu → update: exit_event_id, exit_node_id, exit_at, is_inside=False.
     - Jika tidak ketemu → tetap simpan event (data anomali).
     """
     history = (
         db.query(VehicleHistory)
-        .filter(
-            VehicleHistory.plate_number == event.plate_number,
-            VehicleHistory.is_inside == True,
-        )
+        .filter(_match_open_history(event))
         .order_by(VehicleHistory.created_at.desc())
         .first()
     )

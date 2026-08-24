@@ -298,4 +298,8 @@ AutoGateParkir/
 
 ## Catatan
 
+<<<<<<< HEAD
 Project ini dikembangkan berdasarkan struktur sistem AutoGate Museum, disesuaikan untuk konteks parkir mall dengan tambahan modul pembayaran e-money (mirip e-toll) yang terintegrasi dengan Midtrans sebagai payment gateway.
+=======
+Project ini dikembangkan berdasarkan struktur sistem AutoGate Museum, disesuaikan untuk konteks parkir mall dengan tambahan modul pembayaran e-money (mirip e-toll) yang terintegrasi dengan Midtrans sebagai payment gateway.
+>>>>>>> 9d2a0f75fb523a637da7beaa5920119b5fd78667
