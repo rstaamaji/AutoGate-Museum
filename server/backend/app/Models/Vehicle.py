@@ -13,7 +13,7 @@ class Vehicle(Base):
     __tablename__ = "vehicles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    plate_number = Column(String(20), unique=True, nullable=False, index=True)
+    plate_number = Column(String(20), unique=True, nullable=True, index=True)
     vehicle_type = Column(String(50), nullable=True)   # mobil, motor, truk, dll
     cc = Column(Integer, nullable=True)
     owner_id = Column(Integer, ForeignKey("vehicle_owners.id"), nullable=True, index=True)

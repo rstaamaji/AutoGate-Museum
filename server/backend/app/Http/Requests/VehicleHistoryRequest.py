@@ -12,7 +12,7 @@ class VehicleEventOut(BaseModel):
     id: int
     event_id: str
     node_id: str
-    plate_number: str
+    plate_number: Optional[str] = None
     direction: Direction
     plate_image_url: Optional[str] = None
     scene_image_url: Optional[str] = None
@@ -32,7 +32,7 @@ class VehicleEventListOut(BaseModel):
 
 class VehicleHistoryOut(BaseModel):
     id: int
-    plate_number: str
+    plate_number: Optional[str] = None
     entry_event_id: Optional[str] = None
     exit_event_id: Optional[str] = None
     entry_node_id: Optional[str] = None

@@ -1,6 +1,8 @@
 """
 Model VehicleEvent — catatan setiap kejadian masuk/keluar dari node.
-1 event = 1 kali capture di 1 gate.
+1 event = 1 kali scan di 1 gate.
+
+
 """
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.sql import func
@@ -14,11 +16,19 @@ class VehicleEvent(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(String(36), unique=True, nullable=False, index=True)  # UUID dari node
     node_id = Column(String(50), nullable=False, index=True)
-    plate_number = Column(String(20), nullable=False, index=True)
+
+    # --- DIUBAH: nullable=True (dulu nullable=False) ---
+    plate_number = Column(String(20), nullable=True, index=True)
+
     direction = Column(String(10), nullable=False, index=True)  # masuk / keluar
+
+    # --- tetap ada, tidak dihapus, untuk modul ANPR nanti ---
     plate_image_path = Column(String(255), nullable=True)
     scene_image_path = Column(String(255), nullable=True)
     confidence = Column(Float, nullable=True)
+
+    # --- sudah ada sebelumnya, sekarang jadi cara utama identifikasi ---
     rfid_uid = Column(String(100), nullable=True, index=True)
+
     captured_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())  # waktu diterima server
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -12,7 +12,7 @@ class VehicleOut(BaseModel):
     id: int
     node_id: str
     direction: Direction
-    plate_number: str
+    plate_number: Optional[str] = None
     plate_image_url: Optional[str] = None
     scene_image_url: Optional[str] = None
     confidence: Optional[float] = None
