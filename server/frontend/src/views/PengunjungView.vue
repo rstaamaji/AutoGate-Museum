@@ -85,78 +85,78 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
   <div class="p-6">
     <div class="mb-6">
       <h2 class="text-xl font-bold text-white flex items-center gap-2">
-        <History class="w-5 h-5 text-[var(--text-muted)]" />
+        <History class="w-5 h-5 text-zinc-400" />
         Riwayat Kendaraan
       </h2>
-      <p class="text-xs text-[var(--text-muted)] mt-1">Data gabungan masuk + keluar kendaraan</p>
+      <p class="text-xs text-zinc-400 mt-1">Data gabungan masuk + keluar kendaraan</p>
     </div>
 
     <!-- Filters -->
     <div class="flex gap-3 mb-4">
       <div class="relative flex-1 max-w-xs">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted-dark)]" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
         <input
           v-model="filterPlate"
           type="text"
           placeholder="Cari plat nomor..."
           @keyup.enter="handleSearch"
-          class="w-full bg-[var(--bg-panel-alt)] border border-[var(--border-hover)] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-[var(--text-muted-dark)] focus:outline-none focus:border-[var(--accent)]"
+          class="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500"
         />
       </div>
       <select
         v-model="filterStatus"
         @change="handleSearch"
-        class="bg-[var(--bg-panel-alt)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--accent)]"
+        class="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
       >
         <option value="">Semua Status</option>
         <option value="inside">Di Dalam</option>
         <option value="outside">Sudah Keluar</option>
       </select>
-      <button @click="handleSearch" class="px-4 py-2 bg-[var(--bg-panel-alt)] hover:bg-[var(--border-hover)] text-[var(--text-muted)] text-sm rounded-lg transition">
+      <button @click="handleSearch" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg transition">
         Cari
       </button>
     </div>
 
     <!-- Table -->
-    <div class="bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl shadow-xl shadow-black/40 overflow-hidden">
+    <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl shadow-xl shadow-black/40 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="border-b border-[var(--border)]">
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">Plat</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">Masuk</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">Keluar</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">Node Masuk</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">Node Keluar</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">RFID Masuk</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">RFID Keluar</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">Cocok?</th>
-              <th class="text-left py-3 px-4 text-[var(--text-muted-dark)] font-medium">Status</th>
-              <th class="text-center py-3 px-4 text-[var(--text-muted-dark)] font-medium">Aksi</th>
+            <tr class="border-b border-zinc-800">
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Plat</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Masuk</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Keluar</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Node Masuk</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Node Keluar</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">RFID Masuk</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">RFID Keluar</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Cocok?</th>
+              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Status</th>
+              <th class="text-center py-3 px-4 text-zinc-500 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="h in history"
               :key="h.id"
-              class="border-b border-[var(--border)]/50 hover:bg-[var(--bg-panel-alt)]/50"
+              class="border-b border-zinc-800/50 hover:bg-zinc-800/30"
             >
               <td class="py-3 px-4 font-mono font-bold text-white">{{ h.plate_number }}</td>
               <td class="py-3 px-4">
-                <div class="text-[var(--text-primary)] font-mono">{{ formatTime(h.entry_at) }}</div>
-                <div class="text-[10px] text-[var(--text-muted-dark)]">{{ h.entry_node_name || '---' }}</div>
+                <div class="text-zinc-300 font-mono">{{ formatTime(h.entry_at) }}</div>
+                <div class="text-[10px] text-zinc-500">{{ h.entry_node_name || '---' }}</div>
               </td>
               <td class="py-3 px-4">
-                <div class="text-[var(--text-primary)] font-mono">{{ formatTime(h.exit_at) }}</div>
-                <div class="text-[10px] text-[var(--text-muted-dark)]">{{ h.exit_node_name || '---' }}</div>
+                <div class="text-zinc-300 font-mono">{{ formatTime(h.exit_at) }}</div>
+                <div class="text-[10px] text-zinc-500">{{ h.exit_node_name || '---' }}</div>
               </td>
               <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--bg-panel-alt)] text-[var(--text-muted)] font-mono">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-300 font-mono">
                   {{ h.entry_node_name || '---' }}
                 </span>
               </td>
               <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--bg-panel-alt)] text-[var(--text-muted)] font-mono">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-300 font-mono">
                   {{ h.exit_node_name || '---' }}
                 </span>
               </td>
@@ -168,7 +168,7 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                   <Nfc class="w-3 h-3" />
                   {{ h.entry_rfid }}
                 </span>
-                <span v-else class="text-[var(--text-muted-dark)] text-[10px]">Tanpa RFID</span>
+                <span v-else class="text-zinc-600 text-[10px]">Tanpa RFID</span>
               </td>
               <td class="py-3 px-4">
                 <span
@@ -178,8 +178,8 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                   <Nfc class="w-3 h-3" />
                   {{ h.exit_rfid }}
                 </span>
-                <span v-else-if="!h.is_inside" class="text-[var(--text-muted-dark)] text-[10px]">Tanpa RFID</span>
-                <span v-else class="text-[var(--text-muted-dark)]/70 text-[10px]">---</span>
+                <span v-else-if="!h.is_inside" class="text-zinc-600 text-[10px]">Tanpa RFID</span>
+                <span v-else class="text-zinc-700 text-[10px]">---</span>
               </td>
               <td class="py-3 px-4">
                 <template v-if="rfidMatchStatus(h) === 'match'">
@@ -198,10 +198,10 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                   </span>
                 </template>
                 <template v-else-if="rfidMatchStatus(h) === 'none'">
-                  <span class="text-[var(--text-muted-dark)] text-[10px]">Tanpa RFID</span>
+                  <span class="text-zinc-600 text-[10px]">Tanpa RFID</span>
                 </template>
                 <template v-else>
-                  <span class="text-[var(--text-muted-dark)]/70 text-[10px]">---</span>
+                  <span class="text-zinc-700 text-[10px]">---</span>
                 </template>
               </td>
               <td class="py-3 px-4">
@@ -219,39 +219,39 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
               <td class="py-3 px-4 text-center">
                 <button
                   @click="selectedHistory = h"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-panel-alt)] hover:bg-[var(--border-hover)] text-[var(--text-primary)] text-xs transition border border-[var(--border-hover)]"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition border border-zinc-700/60"
                   title="Lihat Detail"
                 >
-                  <Eye class="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <Eye class="w-3.5 h-3.5 text-blue-400" />
                   <span>Detail</span>
                 </button>
               </td>
             </tr>
             <tr v-if="!history.length && !loading">
-              <td colspan="10" class="py-6 text-center text-[var(--text-muted-dark)]">Belum ada data riwayat</td>
+              <td colspan="10" class="py-6 text-center text-zinc-500">Belum ada data riwayat</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between px-4 py-3 border-t border-[var(--border)]">
-        <p class="text-xs text-[var(--text-muted-dark)]">
+      <div class="flex items-center justify-between px-4 py-3 border-t border-zinc-800">
+        <p class="text-xs text-zinc-500">
           Menampilkan {{ page * limit + 1 }}-{{ Math.min((page + 1) * limit, total) }} dari {{ total }}
         </p>
         <div class="flex items-center gap-2">
           <button
             @click="prevPage"
             :disabled="page === 0"
-            class="p-1.5 rounded text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-panel-alt)] transition disabled:opacity-30"
+            class="p-1.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition disabled:opacity-30"
           >
             <ChevronLeft class="w-4 h-4" />
           </button>
-          <span class="text-xs text-[var(--text-muted)]">{{ page + 1 }}</span>
+          <span class="text-xs text-zinc-400">{{ page + 1 }}</span>
           <button
             @click="nextPage"
             :disabled="(page + 1) * limit >= total"
-            class="p-1.5 rounded text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-panel-alt)] transition disabled:opacity-30"
+            class="p-1.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition disabled:opacity-30"
           >
             <ChevronRight class="w-4 h-4" />
           </button>

@@ -153,7 +153,6 @@ onMounted(fetchVehicles)
             <tr class="border-b border-zinc-800">
               <th class="text-left py-3 px-4 text-zinc-500 font-medium w-16">ID</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Plat Nomor</th>
-              <th class="text-left py-3 px-4 text-zinc-500 font-medium">Pemilik</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Tipe</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">CC</th>
               <th class="text-left py-3 px-4 text-zinc-500 font-medium">Terdaftar</th>
@@ -168,7 +167,6 @@ onMounted(fetchVehicles)
             >
               <td class="py-3 px-4 text-zinc-500 font-mono">{{ v.id }}</td>
               <td class="py-3 px-4 font-mono font-bold text-white">{{ v.plate_number }}</td>
-              <td class="py-3 px-4 text-zinc-300">{{ v.owner_name || '---' }}</td>
               <td class="py-3 px-4 text-zinc-400">{{ v.vehicle_type || '---' }}</td>
               <td class="py-3 px-4 text-zinc-400">{{ v.cc ?? '---' }}</td>
               <td class="py-3 px-4 text-zinc-500 whitespace-nowrap">{{ formatTime(v.created_at) }}</td>
@@ -179,7 +177,7 @@ onMounted(fetchVehicles)
               </td>
             </tr>
             <tr v-if="!vehicles.length && !loading">
-              <td colspan="7" class="py-6 text-center text-zinc-500">Belum ada kendaraan tercatat</td>
+              <td colspan="6" class="py-6 text-center text-zinc-500">Belum ada kendaraan tercatat</td>
             </tr>
           </tbody>
         </table>
