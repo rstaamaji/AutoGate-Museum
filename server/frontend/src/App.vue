@@ -6,12 +6,12 @@ import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import UsersView from '@/views/UsersView.vue'
 import NodesView from '@/views/NodesView.vue'
-import VehicleOwnersView from '@/views/VehicleOwnersView.vue'
-import VehiclesView from '@/views/VehiclesView.vue'
-import VehicleTypesView from '@/views/VehicleTypesView.vue'
-import HistoryView from '@/views/HistoryView.vue'
-import EventsView from '@/views/EventsView.vue'
+import PengunjungView from '@/views/PengunjungView.vue'
 import api from '@/services/api'
+
+// NOTE: VehicleOwnersView, VehiclesView, VehicleTypesView, HistoryView,
+// EventsView TIDAK di-import langsung di sini lagi — sekarang dipakai
+// LEWAT PengunjungView.vue sebagai tab. File-filenya TIDAK dihapus.
 
 const user = ref(null)
 const currentView = ref('dashboard')
@@ -23,11 +23,7 @@ const views = {
   dashboard: DashboardView,
   users: UsersView,
   nodes: NodesView,
-  'vehicle-owners': VehicleOwnersView,
-  'vehicle-types': VehicleTypesView,
-  vehicles: VehiclesView,
-  history: HistoryView,
-  events: EventsView,
+  pengunjung: PengunjungView, // <-- SATU entry baru menggantikan 4 entry lama
 }
 
 const currentComponent = computed(() => views[currentView.value] || DashboardView)
@@ -51,7 +47,6 @@ const handleToggleSidebar = () => {
 }
 
 onMounted(() => {
-  // Cek apakah user sudah login sebelumnya
   const savedUser = api.getUser()
   const token = api.getToken()
   if (savedUser && token) {
@@ -61,10 +56,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- Login Page -->
   <LoginView v-if="!isAuthenticated" @login-success="handleLoginSuccess" />
 
-  <!-- Main App -->
   <div v-else class="min-h-screen bg-zinc-950 text-zinc-100 flex font-sans antialiased">
     <AppSidebar
       :user="user"

@@ -138,7 +138,6 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Masuk</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Keluar</th>
                   <th class="text-left py-2 px-3 text-zinc-500 font-medium">Status</th>
-                  <th class="text-left py-2 px-3 text-zinc-500 font-medium">Pemilik</th>
                 </tr>
               </thead>
               <tbody>
@@ -168,10 +167,9 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
                       {{ h.is_inside ? 'Di Dalam' : 'Keluar' }}
                     </span>
                   </td>
-                  <td class="py-2 px-3 text-zinc-400">{{ h.owner_name || '---' }}</td>
                 </tr>
                 <tr v-if="!recentHistory.length">
-                  <td colspan="5" class="py-4 text-center text-zinc-500">Belum ada data</td>
+                  <td colspan="4" class="py-4 text-center text-zinc-500">Belum ada data</td>
                 </tr>
               </tbody>
             </table>
