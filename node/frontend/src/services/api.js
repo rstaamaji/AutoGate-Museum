@@ -56,6 +56,7 @@ class ApiClient {
     })
   }
 
+<<<<<<< Updated upstream
   // ── RFID ──
 
   async submitRfid(eventId, rfidUid = null) {
@@ -65,12 +66,52 @@ class ApiClient {
     })
   }
 
+=======
+  async startEntryPayment(plateNumber, entryEventId) {
+    return this.request('/api/payment/start', {
+      method: 'POST',
+      body: JSON.stringify({
+        plate_number: plateNumber,
+        entry_event_id: entryEventId,
+      }),
+    })
+  }
+
+  async getPaymentStatus(ticketCode) {
+    return this.request(`/api/payment/status/${encodeURIComponent(ticketCode)}`)
+  }
+
+  async completeEntryPayment(ticketCode) {
+    return this.request(
+      `/api/payment/complete-entry/${encodeURIComponent(ticketCode)}`,
+      { method: 'POST' },
+    )
+  }
+
+>>>>>>> Stashed changes
   // ── Relay/Gate ──
 
   async controlRelay(channel, status) {
     return this.request('/api/relay/control', {
       method: 'POST',
       body: JSON.stringify({ channel, status }),
+    })
+  }
+
+  async validateExit(barcodeToken) {
+    return this.request('/api/payment/validate-exit', {
+      method: 'POST',
+      body: JSON.stringify({ barcode_token: barcodeToken }),
+    })
+  }
+
+  async completeExit(barcodeToken, exitEventId = null) {
+    return this.request('/api/payment/complete-exit', {
+      method: 'POST',
+      body: JSON.stringify({
+        barcode_token: barcodeToken,
+        exit_event_id: exitEventId,
+      }),
     })
   }
 

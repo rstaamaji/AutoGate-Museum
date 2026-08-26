@@ -24,8 +24,13 @@ from app.Http.Requests.VehicleRequest import (
     VehicleListOut,
 )
 from app.Http.Requests.RelayRequest import RelayControlRequest, RelayControlResponse
+<<<<<<< Updated upstream
 from app.Http.Requests.RfidRequest import RfidRequest, RfidResponse
+=======
+from app.Http.Requests.PaymentRequest import EntryPaymentRequest, ExitTicketRequest
+>>>>>>> Stashed changes
 from app.Http.Middleware.auth import verify_api_key
+from app.Services import PaymentService
 
 router = APIRouter(prefix="/api")
 
@@ -93,6 +98,85 @@ async def hikvision_radar_keluar(
 def submit_rfid(payload: RfidRequest, background_tasks: BackgroundTasks):
     """Input RFID setelah ANPR capture — update data + buka gate."""
     return handle_rfid(payload.event_id, payload.rfid_uid, background_tasks)
+
+
+@router.post("/payment/start")
+def start_payment(
+    payload: EntryPaymentRequest,
+    _: None = Depends(verify_api_key),
+):
+    """Kiosk meminta server membuat pembayaran karcis masuk."""
+    return PaymentService.start_entry_payment(
+        plate_number=payload.plate_number,
+        entry_event_id=payload.entry_event_id,
+    )
+
+
+@router.get("/payment/status/{ticket_code}")
+def payment_status(
+    ticket_code: str,
+    _: None = Depends(verify_api_key),
+):
+    """Kiosk memantau status pembayaran karcis."""
+    return PaymentService.get_ticket_status(ticket_code)
+
+
+@router.get("/payment/print-data/{ticket_code}")
+def payment_print_data(
+    ticket_code: str,
+    _: None = Depends(verify_api_key),
+):
+    """Ambil barcode karcis yang sudah lunas untuk printer kiosk."""
+    return PaymentService.get_ticket_print_data(ticket_code)
+
+
+@router.post("/payment/complete-entry/{ticket_code}")
+async def complete_entry_payment(
+    ticket_code: str,
+    _: None = Depends(verify_api_key),
+):
+    """Buka gate masuk hanya setelah server menyatakan karcis paid."""
+    payment_status = PaymentService.get_ticket_status(ticket_code)
+    if not payment_status.get("can_open_gate"):
+        raise HTTPException(
+            status_code=409,
+            detail="Pembayaran belum berhasil; gate tetap tertutup.",
+        )
+
+    print_data = PaymentService.get_ticket_print_data(ticket_code)
+    await RelayController.open_and_close_delayed(1, 15)
+    return {"success": True, "ticket": print_data, "gate_opened": True}
+
+
+@router.post("/payment/validate-exit")
+def validate_exit_payment(
+    payload: ExitTicketRequest,
+    _: None = Depends(verify_api_key),
+):
+    """Scanner meminta validasi barcode sebelum gate keluar dibuka."""
+    return PaymentService.validate_exit(payload.barcode_token)
+
+
+@router.post("/payment/complete-exit")
+async def complete_exit_payment(
+    payload: ExitTicketRequest,
+    background_tasks: BackgroundTasks,
+    _: None = Depends(verify_api_key),
+):
+    """Tandai karcis digunakan lalu buka gate keluar."""
+    result = PaymentService.complete_exit(
+        payload.barcode_token,
+        payload.exit_event_id,
+    )
+    if not result.get("valid"):
+        raise HTTPException(status_code=409, detail=result.get("message"))
+
+    background_tasks.add_task(
+        RelayController.open_and_close_delayed,
+        4,
+        15,
+    )
+    return {"success": True, "ticket": result, "gate_opened": True}
 
 
 # ── Relay/Gate ──
