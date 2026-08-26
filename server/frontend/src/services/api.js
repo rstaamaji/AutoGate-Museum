@@ -124,10 +124,10 @@ class ApiClient {
     return this.request(`/api/users/${userId}`, { method: 'DELETE' })
   }
 
-  // ══════════════════════════════════════════
+ 
+ // ══════════════════════════════════════════
   // NODES (super_admin write, admin read)
   // ══════════════════════════════════════════
-
   async getNodes() {
     return this.request('/api/nodes')
   }
@@ -152,6 +152,20 @@ class ApiClient {
 
   async deleteNode(nodeId) {
     return this.request(`/api/nodes/${nodeId}`, { method: 'DELETE' })
+  }
+
+  // ══════════════════════════════════════════
+  // Ticket (vehicle owner)
+  // ══════════════════════════════════════════
+  async getTicketPrintData(ticketCode, nodeApiKey) {
+    return this.request(
+    `/api/tickets/${encodeURIComponent(ticketCode)}/print-data`,
+    {
+      headers: {
+        'X-API-Key': nodeApiKey,
+        },
+      },
+    )
   }
 
   // ══════════════════════════════════════════

@@ -26,7 +26,12 @@ services:
     env_file:
       - ./backend/.env
     environment:
+<<<<<<< Updated upstream:server/docker-compose.yml
       - DATABASE_URL=postgresql+psycopg2://postgres:password@postgres:5432/autogatedb
+=======
+      - DATABASE_URL=postgresql+psycopg2://postgres:root@postgres:5432/autogatemuseumdb
+
+>>>>>>> Stashed changes:server/backend/docker-compose.yml
     ports:
       - "8000:8000"
     volumes:

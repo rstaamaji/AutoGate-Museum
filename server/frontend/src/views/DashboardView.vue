@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { BarChart3, Car, Radio, Wifi, WifiOff, History, ArrowRight } from '@lucide/vue'
 import NodeStatusList from '@/components/node/NodeStatusList.vue'
 import api from '@/services/api'
+import TicketPrintCard from '@/components/payment/TicketPrintCard.vue'
 
 const emit = defineEmits(['navigate'])
 
@@ -111,6 +112,8 @@ onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
         </div>
       </div>
     </div>
+
+    <TicketPrintCard />
 
     <!-- Main Content -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">

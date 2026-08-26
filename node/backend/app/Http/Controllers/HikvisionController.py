@@ -8,7 +8,7 @@ Alur:
   3. Cocokkan IP → direction (masuk/keluar)
   4. Pull gambar dari kamera (plate image + scene image)
   5. Simpan ke SQLite + queue sync
-  6. Buka gate
+    6. Gate keluar dibuka setelah barcode valid; gate masuk menunggu pembayaran
 """
 import asyncio
 import json
@@ -25,6 +25,8 @@ from app.config import settings
 from app.database import get_db
 from app.Models.Vehicle import Vehicle
 from app.Http.Requests.VehicleRequest import VehicleCaptureOut, VehicleOut
+from app.Http.Requests.VehicleRequest import PaymentInfo
+from app.Services import PaymentService
 from app.Services import CameraService
 from app.Services.VehicleService import to_out_dict
 
@@ -362,14 +364,40 @@ async def handle_radar_event(request: Request, forced_direction: Optional[str] =
             (vehicle_id, json.dumps(sync_payload)),
         )
 
+<<<<<<< Updated upstream
     # ── 8. Jangan buka gate dulu — tunggu RFID ──
     logger.info(f"Hikvision: {plate_number} ({direction}) disimpan, menunggu RFID")
+=======
+    payment = None
+
+    # Gate masuk menunggu pembayaran; hanya gate keluar yang dibuka di jalur ini.
+    if direction == "keluar":
+        background_tasks.add_task(
+            RelayController.open_and_close_delayed,
+            4,
+            15,
+        )
+        logger.info(f"Hikvision: {plate_number} ({direction}) disimpan, gate dibuka")
+    else:
+        payment = PaymentService.start_entry_payment(
+            plate_number=vehicle.plate_number,
+            entry_event_id=vehicle.event_id,
+        )
+        logger.info(
+            f"Hikvision: {plate_number} ({direction}) disimpan, "
+            "menunggu pembayaran sebelum gate dibuka"
+        )
+>>>>>>> Stashed changes
 
     return VehicleCaptureOut(
         ignored=False,
         validated=True if direction == "keluar" else None,
         vehicle=VehicleOut(**to_out_dict(vehicle)),
+<<<<<<< Updated upstream
         rfid_pending=True,
+=======
+        payment=PaymentInfo(**payment) if payment else None,
+>>>>>>> Stashed changes
     )
 
 

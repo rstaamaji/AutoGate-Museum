@@ -28,7 +28,11 @@ def init_db():
     from app.Models import Vehicle  # noqa: F401
     from app.Models import VehicleEvent  # noqa: F401
     from app.Models import VehicleHistory  # noqa: F401
+<<<<<<< Updated upstream
     from app.Models import VehicleType  # noqa: F401
+=======
+    from app.Models import ParkingTicket  # noqa: F401
+>>>>>>> Stashed changes
 
     Base.metadata.create_all(bind=engine)
     _link_orphan_vehicles()

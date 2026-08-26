@@ -58,6 +58,24 @@ from app.Http.Requests.VehicleHistoryRequest import (
 )
 from app.Http.Requests.VehicleUpdateRequest import VehicleUpdateRequest
 
+from app.Http.Requests.PaymentRequest import (
+    EntryPaymentRequest,
+    EntryPaymentResponse,
+    TicketPrintResponse,
+    TicketStatusResponse,
+    ExitTicketRequest,
+    ExitTicketResponse,
+)
+
+from app.Http.Controllers.PaymentController import (
+    start_entry_payment,
+    handle_payment_notification,
+    get_ticket_print_data,
+    get_ticket_status,
+    validate_exit_ticket,
+    complete_exit_ticket,
+)
+
 from app.Http.Controllers.AuthController import login, get_me
 from app.Http.Controllers.UserController import (
     list_users,
@@ -234,6 +252,95 @@ def api_validate_plate(
     """Node tanya: apakah plat ini sedang di dalam? Otomatis update status node."""
     return validate_plate(db, plate_number, node_id=node.id)
 
+
+# ══════════════════════════════════════════════════════════════
+# PaymentRequest
+# ══════════════════════════════════════════════════════════════
+
+@router.post(
+    "/tickets/entry-payment",
+    response_model=EntryPaymentResponse,
+)
+def api_start_entry_payment(
+    request: EntryPaymentRequest,
+    db: Session = Depends(get_db),
+    node: Node = Depends(verify_node_api_key),
+):
+    """
+    Membuat karcis dan transaksi pembayaran saat kendaraan masuk.
+    """
+    return start_entry_payment(
+        db=db,
+        plate_number=request.plate_number,
+        entry_event_id=request.entry_event_id,
+    )
+@router.post("/payment/notification")
+def api_payment_notification(
+    notification: dict,
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint untuk menerima notifikasi pembayaran dari Midtrans.
+    Tidak memakai JWT karena dipanggil langsung oleh Midtrans.
+    """
+    return handle_payment_notification(
+        db=db,
+        notification=notification,
+    )
+
+@router.get(
+    "/tickets/{ticket_code}/print-data",
+    response_model=TicketPrintResponse,
+)
+def api_ticket_print_data(
+    ticket_code: str,
+    db: Session = Depends(get_db),
+    node: Node = Depends(verify_node_api_key),
+):
+    """
+    Mengambil data karcis yang sudah dibayar untuk dicetak.
+    """
+    return get_ticket_print_data(
+        db=db,
+        ticket_code=ticket_code,
+    )
+
+
+@router.get(
+    "/tickets/{ticket_code}/status",
+    response_model=TicketStatusResponse,
+)
+def api_ticket_status(
+    ticket_code: str,
+    db: Session = Depends(get_db),
+    node: Node = Depends(verify_node_api_key),
+):
+    """Status pembayaran karcis untuk dipantau node secara otomatis."""
+    return get_ticket_status(db=db, ticket_code=ticket_code)
+
+
+@router.post("/tickets/validate-exit", response_model=ExitTicketResponse)
+def api_validate_exit(
+    request: ExitTicketRequest,
+    db: Session = Depends(get_db),
+    node: Node = Depends(verify_node_api_key),
+):
+    """Validasi barcode karcis tanpa mengubah statusnya."""
+    return validate_exit_ticket(db=db, barcode_token=request.barcode_token)
+
+
+@router.post("/tickets/complete-exit", response_model=ExitTicketResponse)
+def api_complete_exit(
+    request: ExitTicketRequest,
+    db: Session = Depends(get_db),
+    node: Node = Depends(verify_node_api_key),
+):
+    """Tandai karcis paid menjadi used setelah kendaraan siap keluar."""
+    return complete_exit_ticket(
+        db=db,
+        barcode_token=request.barcode_token,
+        exit_event_id=request.exit_event_id,
+    )
 
 # ══════════════════════════════════════════════════════════════
 # VEHICLES (admin, super_admin)

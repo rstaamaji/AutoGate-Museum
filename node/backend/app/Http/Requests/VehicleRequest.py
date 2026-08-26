@@ -35,11 +35,22 @@ class VehicleListOut(BaseModel):
     items: list[VehicleOut]
 
 
+class PaymentInfo(BaseModel):
+    ticket_code: Optional[str] = None
+    amount: Optional[int] = None
+    snap_token: Optional[str] = None
+    redirect_url: Optional[str] = None
+    status: Optional[str] = None
+    
 class VehicleCaptureOut(BaseModel):
-    """Response POST /api/plates/{direction}."""
+    """Response capture kendaraan dan pembayaran masuk jika dibuat."""
     ignored: bool
     reason: Optional[str] = None
-    validated: Optional[bool] = None  # True=valid, False=ditolak, None=tidak perlu validasi (masuk)
+    validated: Optional[bool] = None
     vehicle: Optional[VehicleOut] = None
+<<<<<<< Updated upstream
     rfid_pending: bool = False  # True = frontend tampilkan modal RFID
     rfid_match: Optional[bool] = None  # Hanya untuk keluar: True=cocok, False=beda, None=N/A
+=======
+    payment: Optional[PaymentInfo] = None
+>>>>>>> Stashed changes

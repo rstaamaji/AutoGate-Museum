@@ -6,6 +6,7 @@ import RfidInputModal from '@/components/gate/RfidInputModal.vue'
 import SyncStatus from '@/components/sync/SyncStatus.vue'
 import { Nfc, Loader2 } from '@lucide/vue'
 import api from '@/services/api'
+import EntryKiosk from '@/components/payment/EntryKiosk.vue'
 
 const gates = ref([
   {
@@ -143,6 +144,7 @@ onUnmounted(() => {
 
 <template>
   <div class="p-4 sm:p-6 space-y-6">
+<<<<<<< Updated upstream
     <!-- Banner: Menunggu RFID -->
     <div
       v-if="waitingRfidPlates.length > 0 && !pendingRfid"
@@ -173,6 +175,9 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
+=======
+    <EntryKiosk />
+>>>>>>> Stashed changes
 
     <!-- Grid: Gate Cards + Sync Status -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">

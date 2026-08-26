@@ -34,6 +34,14 @@ class Settings:
     APP_HOST: str = os.getenv("APP_HOST", "0.0.0.0")
     APP_PORT: int = int(os.getenv("APP_PORT", "8000"))
 
+    #midtrans
+    TARIF_KARCIS: int = int(os.getenv("TARIF_KARCIS", "5000"))
+    MIDTRANS_SERVER_KEY: str = os.getenv("MIDTRANS_SERVER_KEY", "")
+    MIDTRANS_CLIENT_KEY: str = os.getenv("MIDTRANS_CLIENT_KEY", "")
+    MIDTRANS_IS_PRODUCTION: bool = os.getenv(
+    "MIDTRANS_IS_PRODUCTION", "false"
+    ).lower() == "true"
+
 
 settings = Settings()
 
