@@ -18,6 +18,21 @@ logger = logging.getLogger(__name__)
 
 class RelayController:
     @staticmethod
+    def set_exit_ticket_indicator(paid: bool) -> None:
+        """Set indikator tiket keluar tanpa menghentikan alur palang jika LED gagal."""
+        try:
+            RelayController.control(
+                RelayControlRequest(channel=settings.EXIT_LED_GREEN, status=paid),
+                triggered_by="ticket-status",
+            )
+            RelayController.control(
+                RelayControlRequest(channel=settings.EXIT_LED_RED, status=not paid),
+                triggered_by="ticket-status",
+            )
+        except Exception as e:
+            logger.error(f"Gagal mengatur indikator tiket keluar: {e}")
+
+    @staticmethod
     def control(payload: RelayControlRequest, triggered_by: str = "manual") -> RelayControlResponse:
         """Kontrol channel modbus relay."""
         try:

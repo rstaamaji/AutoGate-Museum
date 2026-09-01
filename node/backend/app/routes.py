@@ -24,11 +24,11 @@ from app.Http.Requests.VehicleRequest import (
     VehicleListOut,
 )
 from app.Http.Requests.RelayRequest import RelayControlRequest, RelayControlResponse
-<<<<<<< Updated upstream
+from app.Http.Requests.PaymentRequest import (
+    EntryPaymentRequest,
+    ExitTicketRequest,
+)
 from app.Http.Requests.RfidRequest import RfidRequest, RfidResponse
-=======
-from app.Http.Requests.PaymentRequest import EntryPaymentRequest, ExitTicketRequest
->>>>>>> Stashed changes
 from app.Http.Middleware.auth import verify_api_key
 from app.Services import PaymentService
 
@@ -154,7 +154,9 @@ def validate_exit_payment(
     _: None = Depends(verify_api_key),
 ):
     """Scanner meminta validasi barcode sebelum gate keluar dibuka."""
-    return PaymentService.validate_exit(payload.barcode_token)
+    result = PaymentService.validate_exit(payload.barcode_token)
+    RelayController.set_exit_ticket_indicator(result.get("valid", False))
+    return result
 
 
 @router.post("/payment/complete-exit")
@@ -169,7 +171,10 @@ async def complete_exit_payment(
         payload.exit_event_id,
     )
     if not result.get("valid"):
+        RelayController.set_exit_ticket_indicator(False)
         raise HTTPException(status_code=409, detail=result.get("message"))
+
+    RelayController.set_exit_ticket_indicator(False)
 
     background_tasks.add_task(
         RelayController.open_and_close_delayed,

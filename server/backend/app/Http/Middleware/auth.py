@@ -3,8 +3,8 @@ Autentikasi & otorisasi — Server.
 """
 from typing import Optional
 
-from fastapi import Header, HTTPException, Depends, status
-from fastapi.requests import Request
+from fastapi import HTTPException, Depends, Security, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,8 @@ from app.Models.User import User
 from app.Models.Node import Node
 
 ALGORITHM = "HS256"
+bearer_scheme = HTTPBearer(auto_error=False)
+api_key_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 # ── JWT ──
@@ -27,18 +29,19 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
-async def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User:
     """Decode JWT token dari Authorization header dan return user."""
-    auth: str = request.headers.get("authorization", "")
-
-    if not auth.startswith("Bearer "):
+    if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token tidak ditemukan",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = auth.removeprefix("Bearer ").strip()
+    token = credentials.credentials.strip()
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token kosong")
 
@@ -75,10 +78,15 @@ def require_role(*allowed_roles: str):
 # ── Node API Key ──
 
 async def verify_node_api_key(
-    x_api_key: str = Header(..., description="API key khusus node"),
+    x_api_key: str = Security(api_key_scheme),
     db: Session = Depends(get_db),
 ) -> Node:
     """Verifikasi API key node. Return Node object jika valid."""
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key node tidak ditemukan",
+        )
     print(f"[NODE AUTH] Received X-API-Key: {x_api_key[:20]}..." if len(x_api_key) > 20 else f"[NODE AUTH] Received X-API-Key: {x_api_key}")
     node = db.query(Node).filter(Node.api_key == x_api_key).first()
     if not node:

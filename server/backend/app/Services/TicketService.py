@@ -15,7 +15,7 @@ def create_ticket(db, plate_number: str, entry_event_id: str):
         plate_number=plate_number,
         entry_event_id=entry_event_id,
         amount=settings.TARIF_KARCIS,
-        status="payment_pending",
+        status="pending",
         entry_at=datetime.now(timezone.utc),
     )
 

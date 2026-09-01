@@ -105,6 +105,14 @@ class Settings:
     def CAMERA_OUT_RELAY_CLOSE(self) -> int:
         return int(_getenv("CAMERA_OUT_RELAY_CLOSE", "5"))
 
+    @property
+    def EXIT_LED_GREEN(self) -> int:
+        return int(_getenv("EXIT_LED_GREEN", "6"))
+
+    @property
+    def EXIT_LED_RED(self) -> int:
+        return int(_getenv("EXIT_LED_RED", "7"))
+
     # ── Kamera Umum ──
     @property
     def CAMERA_AUTH_TYPE(self) -> str:

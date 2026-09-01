@@ -61,19 +61,16 @@ def start_entry_payment(
         expiry_hours=settings.TICKET_PENDING_TTL_HOURS,
     )
 
+    ticket.order_id = order_id
+    db.commit()
+    db.refresh(ticket)
+
     payment_url = payment.get("redirect_url")
     if not payment_url:
         raise HTTPException(
             status_code=502,
             detail="Midtrans tidak mengembalikan redirect URL pembayaran",
         )
-
-    ticket.order_id = order_id
-    ticket.payment_token = payment.get("token")
-    ticket.payment_redirect_url = payment_url
-    ticket.payment_created_at = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(ticket)
 
     # Cetak karcis secara fisik (tanpa memblokir response jika terjadi error)
     cetak_karcis_fisik(
@@ -280,8 +277,7 @@ def get_ticket_status(db: Session, ticket_code: str) -> dict:
 
 def validate_exit_ticket(db: Session, barcode_token: str) -> dict:
     ticket = db.query(ParkingTicket).filter(
-        (ParkingTicket.barcode_token == barcode_token)
-        | (ParkingTicket.payment_redirect_url == barcode_token)
+        ParkingTicket.barcode_token == barcode_token
     ).first()
 
     if not ticket:
@@ -338,8 +334,7 @@ def complete_exit_ticket(
     exit_event_id: str | None = None,
 ) -> dict:
     ticket = db.query(ParkingTicket).filter(
-        (ParkingTicket.barcode_token == barcode_token)
-        | (ParkingTicket.payment_redirect_url == barcode_token)
+        ParkingTicket.barcode_token == barcode_token
     ).with_for_update().first()
 
     if not ticket or ticket.status != "paid":
@@ -366,12 +361,7 @@ def complete_exit_ticket(
     }
 
 
-def cetak_karcis_fisik(
-    ticket_code: str,
-    barcode_token: str,
-    redirect_url: str,
-    plate_number: str,
-):
+def cetak_karcis_fisik(ticket_code: str, barcode_token: str, redirect_url: str, plate_number: str):
     """
     Memanggil print_ticket.py sebagai proses Windows terpisah (non-blocking).
     Ini diperlukan karena Windows Print Spooler (Win32Raw) harus berjalan
@@ -386,13 +376,7 @@ def cetak_karcis_fisik(
 
     try:
         proc = subprocess.Popen(
-            [
-                sys.executable,
-                script_path,
-                ticket_code,
-                redirect_url,
-                plate_number,
-            ],
+            [sys.executable, script_path, ticket_code, barcode_token, redirect_url, plate_number],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             # Jalankan di direktori backend agar .env terbaca

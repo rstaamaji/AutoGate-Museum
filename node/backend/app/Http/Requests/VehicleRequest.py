@@ -48,9 +48,5 @@ class VehicleCaptureOut(BaseModel):
     reason: Optional[str] = None
     validated: Optional[bool] = None
     vehicle: Optional[VehicleOut] = None
-<<<<<<< Updated upstream
     rfid_pending: bool = False  # True = frontend tampilkan modal RFID
     rfid_match: Optional[bool] = None  # Hanya untuk keluar: True=cocok, False=beda, None=N/A
-=======
-    payment: Optional[PaymentInfo] = None
->>>>>>> Stashed changes
